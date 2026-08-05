@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+uv.lock.bak
+
+# Data & model artifacts (never tracked — too large, not source)
+data/
+models_cache/
+.cache/
+*.npy
+*.npz
+*.pt
+*.h5
+*.hmm
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Env
+.env

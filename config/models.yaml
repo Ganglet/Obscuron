@@ -1,0 +1,34 @@
+# Model identifiers and device/quantization policy for the embedding pipeline.
+# Both entries implement the same Embedder interface (src/darkmatter/embeddings/base.py)
+# so they are interchangeable per blueprint §8 ("parallel, interchangeable pipelines").
+
+genos_m:
+  hf_repo: "BGI-HangzhouAI/Genos-m"
+  # Full bf16 weights are ~9GB — over budget on 8GB-class GPUs (RTX 4060 laptop).
+  #
+  # KNOWN ISSUE (found during Phase 1 hardware validation, see
+  # docs/reproducibility.md "Genos-m hardware fit"): bitsandbytes
+  # quantization does NOT reduce this model's footprint. Its MoE experts
+  # are implemented as batched nn.Parameter tensors (transformers'
+  # MixtralExperts class: gate_up_proj (32, 8192, 1024), down_proj
+  # (32, 1024, 4096)) rather than per-expert nn.Linear modules, and
+  # bitsandbytes only quantizes nn.Linear. quantize_below_vram_gb below is
+  # therefore currently a no-op for the ~4.6B/4.7B params that live in
+  # .experts — load_in_8bit/4bit only shrinks the small non-expert layers.
+  vram_bf16_gb: 9.0
+  quantize_below_vram_gb: 16.0   # currently ineffective for the expert weights — see note above
+  max_tokens: 8192                # cap for embedding calls; model supports far more
+
+esm2:
+  # Default variant chosen for fast iteration / smoke testing. Larger variants
+  # (t33_650M, t36_3B) fit comfortably on the 4060 in fp16 and should be used
+  # for the actual Genos-m/ESM-2 comparison once the pipeline is validated.
+  hf_repo: "facebook/esm2_t30_150M_UR50D"
+  vram_bf16_gb: 0.6
+  quantize_below_vram_gb: 0.0   # never needed at this size
+  max_tokens: 1024
+
+device_policy:
+  prefer: ["cuda", "mps", "cpu"]
+  # bitsandbytes has no MPS support — Genos-m on Apple Silicon needs either
+  # CPU offload (slow) or must be skipped in favor of ESM-2 until resolved.
