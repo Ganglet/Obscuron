@@ -1,58 +1,125 @@
-# Illuminating Microbial Dark Matter
+# Obscuron
+**Calibrated Novelty Detection for Microbial Dark Matter via Retrospective Validation**
 
-Structure- and novelty-aware detection of uncharacterized microbial
-sequence function. Implementation of the methodology in
-`Illuminating_Microbial_Dark_Matter_Blueprint.docx` — see that document
-for the full research rationale; this README covers the codebase only.
+Final-year B.Tech capstone · MPSTME, NMIMS Hyderabad. Targets ACM-BCB 2027 (fallback: IEEE BIBM).
 
-## Status
+---
 
-Phase 1 (Weeks 1–3): embedding pipeline and data-fetch infrastructure are
-built. The snapshot-boundary decision (`config/snapshots.yaml`) and the
-snapshot-differencing / positive-label extraction pipeline are still
-pending Track 1 sign-off — see `docs/reproducibility.md`.
+## What this is
+
+A large fraction of sequenced microbial genes match nothing in any reference database — *microbial dark matter*. Their function is unknown precisely because function is normally assigned by comparison to a known reference, and there is none. That same absence removes the ground truth needed to evaluate any method that claims to find the interesting cases.
+
+Obscuron scores each dark-matter sequence by a **calibrated novelty score** — how far it sits outside the region of characterized sequence space in a genomic embedding — framed as open-set recognition rather than forced classification. It resolves the missing-ground-truth problem with **retrospective validation**: freeze a reference database at an earlier snapshot, score what was dark matter *then*, and grade those scores against today's more complete database, where some of those sequences have since been characterized.
+
+The contribution is scoped as *prioritisation of sequences that merit investigation*, with an honest calibrated confidence — not functional determination, which requires wet-lab validation.
+
+---
+
+## Method, in one line
+
+Embed → model the boundary of "known" → assign a calibrated novelty score (EVT / density-based) → validate retrospectively (Precision@K, held-out-family AUROC, calibration check).
+
+- **Core (Layer 1):** calibrated novelty scoring over genomic embeddings (Genos-m primary, ESM-2 fallback *and* genome-vs-protein comparison).
+- **Supporting narrative (Layer 3):** immune-inspired self/non-self discrimination over the same embeddings.
+- **Extension (Layer 2/4), time permitting:** structural fusion or multi-signal convergence.
+
+---
+
+## Current implementation
+
+Phase 1 code — embedding backends, GTDB/Pfam ingestion, snapshot fetch/differencing — lives in `src/darkmatter/` (`uv`/`pyproject.toml`) rather than the `obscuron/` package below. The package layout described in this README is the target structure; `src/darkmatter/` is where Track 2's working, tested Phase 1 pipeline actually runs today. Reconciling the two (rename vs. re-point) is an open item between tracks, not yet decided.
+
+```bash
+uv sync
+
+# verify both embedding backends load on this machine
+uv run python scripts/smoke_test.py
+
+# fetch a reference-database release (metadata-only, not full sequence data)
+uv run python scripts/fetch_snapshot.py --source gtdb --release R232 --metadata-only
+
+# embed a FASTA file
+uv run python scripts/embed.py --model genos-m --fasta sequences.fasta --out out/genos_m.npy
+```
+
+See `docs/reproducibility.md` for hardware findings (Genos-m VRAM constraints) and dataset provenance notes.
+
+---
 
 ## Setup
 
 ```bash
-uv sync
+conda env create -f environment.yml
+conda activate obscuron
+# or:  pip install -r requirements.txt
 ```
 
-Requires an NVIDIA GPU with CUDA for practical Genos-m inference (falls
-back to 8-bit quantization automatically below 16GB VRAM — see
-`config/models.yaml`). CPU/MPS both work for ESM-2.
+---
 
-## Usage
+## Data
 
-```bash
-# Verify the environment and both embedding backends load on this machine
-uv run python scripts/smoke_test.py
+Reference-database snapshots, sequences, and cached embeddings are **not stored in this repository** (large, and regenerable). They live under `data/`, which is gitignored, and are built by the Track 2 ingestion/snapshot-differencing pipeline. Primary reference: **GTDB** historical + current release pair; supplementary: Pfam / UniProt. See `ACKNOWLEDGEMENTS.md` for sources and citations.
 
-# Fetch a reference-database release (metadata/taxonomy only, not full data)
-uv run python scripts/fetch_snapshot.py --source gtdb --release R226 --metadata-only
-uv run python scripts/fetch_snapshot.py --source pfam --release 37.0 --metadata-only
+---
 
-# Embed a FASTA file with either backend
-uv run python scripts/embed.py --model genos-m --fasta sequences.fasta --out out/genos_m.npy
-uv run python scripts/embed.py --model esm2 --fasta sequences.fasta --out out/esm2.npy
-```
-
-## Layout
+## Structure
 
 ```
-config/          snapshot boundaries, model/quantization policy
-src/darkmatter/
-  device.py        hardware detection, VRAM-aware dtype/quantization policy
-  embeddings/       Genos-m + ESM-2, behind a common Embedder interface
-  data/             GTDB / Pfam release fetchers, dataset manifest writer
-scripts/          CLI entry points
-tests/            pytest — fast (test_device.py) and slow/weight-downloading (test_embeddings_smoke.py)
-docs/             reproducibility standards, experiment log
+Obscuron/
+├── obscuron/          # target source package (not yet populated — see "Current implementation")
+├── src/darkmatter/    # actual Phase 1 implementation: device policy, embeddings, data fetchers
+├── scripts/           # data build, embedding extraction, evaluation drivers
+├── configs/           # version-controlled run configs (fixed seeds)
+├── config/            # snapshot boundaries, model/quantization policy (used by src/darkmatter)
+├── data/              # gitignored — snapshots, sequences, embeddings (built locally)
+├── figures/           # gitignored — output figures from evaluation
+├── Paper/             # gitignored — reference PDFs (cited in ACKNOWLEDGEMENTS)
+├── Documentation/
+│   ├── problems_and_decisions.md              # numbered decision log (D…, P#-D…)
+│   └── 01_track1_phase1_benchmark_scope.md    # Phase 1 Track 1 working record
+├── docs/              # reproducibility standards, experiment log (Track 2)
+├── README.md
+├── LICENSE
+├── ACKNOWLEDGEMENTS.md
+├── environment.yml
+└── requirements.txt
 ```
 
-## Tests
+---
 
-```bash
-uv run pytest tests/test_device.py          # fast, no GPU/weights needed
-RUN_SLOW_TESTS=1 uv run pytest tests/test_embeddings_smoke.py -v   # downloads model weights
-```
+## Tracks
+
+Two coordinated tracks, synchronised at each phase boundary.
+
+- **Track 1 — Methodology, Design & Analysis** (Angshuman): snapshot boundary + provenance standards, embedding protocol + model-comparison design, metric definition, calibration methodology, result interpretation, manuscript authoring.
+- **Track 2 — Implementation & Experimental Execution:** ingestion + snapshot-differencing pipeline, embedding extraction, scoring-model implementation, diagnostics, structure prediction, figures, packaging.
+
+---
+
+## Status
+
+Phase 1 — Benchmark construction and scope gate (in progress).
+
+| Phase | Weeks | Focus | Status |
+|-------|-------|-------|--------|
+| 1 | 1–3 *(time-boxed)* | Retrospective benchmark + embedding pipeline; **resolve go/no-go dataset gate** | **In progress** |
+| 2 | 4–6 | Layer 1 calibrated novelty scorer against fixed metrics | Not started |
+| 3 | 7–9 | Layer 3 immune-inspired discrimination framework | Not started |
+| 4 | 10–12 | Scoped extension (if time) + manuscript | Not started |
+
+### Phase 1 — Track 1 deliverables
+
+- Define the temporal boundary between historical and current reference snapshots, with justification.
+- Specify the embedding-extraction protocol (model selection, layer/pooling strategy, batching).
+- Estimate the retrospective positive-label set size and **resolve the go/no-go criterion before Phase 2**.
+- Conduct the initial systematic literature search to confirm novelty positioning.
+- Establish documentation and reproducibility standards.
+
+Working record: `Documentation/01_track1_phase1_benchmark_scope.md`.
+Go/no-go floor: ≥ 50–100 characterised positive-label sequences for a stable AUROC; if short → widen the snapshot interval or broaden references; if infeasible → promote Layer 5 (coding-vs-noise statistics, which needs no positive set) to primary.
+
+---
+
+## License
+
+MIT — see `LICENSE`. Reference materials and external tools are credited in `ACKNOWLEDGEMENTS.md`.
