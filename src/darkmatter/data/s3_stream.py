@@ -8,9 +8,12 @@ either file whole, let alone both, so download and upload happen
 concurrently: bytes are read from the HTTP response and handed to boto3's
 multipart uploader as they arrive.
 
-Caveat: a network failure partway through is not resumed — the multipart
-upload is aborted and the whole transfer must be re-run. Acceptable for a
-one-off dataset pull; not built for unreliable links.
+Caveat: a network failure partway through is not resumed at the byte level —
+the multipart upload is aborted and the whole file must be re-fetched from
+GTDB. `stream_to_s3_with_retries` at least survives that automatically
+(found necessary in practice: the first live run died ~8.5% into a 43GB
+file on a plain read timeout), retrying the whole file up to `max_retries`
+times with backoff instead of needing a human to notice and restart it.
 """
 
 from __future__ import annotations
@@ -77,7 +80,7 @@ def stream_to_s3(url: str, bucket: str, key: str, profile: str) -> None:
     http = requests.Session()
     http.mount("https://", HTTPAdapter(max_retries=retry))
 
-    with http.get(url, stream=True, timeout=(10, 120)) as resp:
+    with http.get(url, stream=True, timeout=(15, 300)) as resp:
         resp.raise_for_status()
         total = int(resp.headers.get("content-length", 0))
         print(f"Starting {url} -> s3://{bucket}/{key} ({total / 1e9:.2f}GB)", flush=True)
@@ -88,3 +91,29 @@ def stream_to_s3(url: str, bucket: str, key: str, profile: str) -> None:
         )
         s3.upload_fileobj(fileobj, bucket, key, Config=config)
     print(f"Done: s3://{bucket}/{key}", flush=True)
+
+
+def _abort_stale_uploads(s3, bucket: str, key: str) -> None:
+    uploads = s3.list_multipart_uploads(Bucket=bucket, Prefix=key).get("Uploads", [])
+    for upload in uploads:
+        if upload["Key"] == key:
+            s3.abort_multipart_upload(Bucket=bucket, Key=key, UploadId=upload["UploadId"])
+            print(f"Aborted stale multipart upload for {key}", flush=True)
+
+
+def stream_to_s3_with_retries(url: str, bucket: str, key: str, profile: str, max_retries: int = 10) -> None:
+    """Retries the whole-file transfer on failure — not a byte-level resume,
+    just enough to survive a multi-hour transfer needing zero babysitting."""
+    s3 = boto3.Session(profile_name=profile).client("s3")
+    for attempt in range(1, max_retries + 1):
+        try:
+            stream_to_s3(url, bucket, key, profile)
+            return
+        except Exception as e:
+            print(f"Attempt {attempt}/{max_retries} failed: {e}", flush=True)
+            _abort_stale_uploads(s3, bucket, key)
+            if attempt == max_retries:
+                raise
+            wait = min(60 * attempt, 600)
+            print(f"Retrying in {wait}s...", flush=True)
+            time.sleep(wait)
