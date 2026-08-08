@@ -18,6 +18,9 @@ Configure the compute environment on both hardware targets (RTX 4060 laptop, M1 
 - **S3 storage pipeline**: created bucket `darkmatter-gtdb-067620369122` (eu-north-1, public access blocked, AES256 default encryption). The GTDB representative-genome protein FASTA files that feed the embedding pipeline are too large for local disk (R232: ~123GB, R207: ~40GB — neither drive on this machine has that much free space), so built `src/darkmatter/data/s3_stream.py` to stream HTTP → S3 multipart upload directly, without buffering the full file locally.
 - **IAM cleanup**: replaced root-account access-key usage with two scoped IAM users (`darkmatter-track1`, `darkmatter-track2`), each limited to read/write on just this one bucket.
 - **`src/darkmatter/data/preprocess.py`**: parses the raw taxonomy TSVs into a structured table (one column per rank — domain/phylum/class/order/family/genus/species) plus summary counts. Confirmed real numbers: R232 has 901,341 genomes / 199,923 species vs. R207's 317,542 / 65,703 — database size nearly tripled across the interval, a good early signal for the go/no-go positive-label estimate.
+- **S3 transfer reliability**: the first live run of `s3_stream.py` died 8.5% into the 43GB R207 file on a plain network read timeout, with no way to continue except restarting from byte 0. Rewrote it twice: first to auto-retry the whole file on failure, then properly — to resume from the exact byte offset. Resume works off S3's own multipart-upload state (`list_multipart_uploads` / `list_parts`), not a local state file, so it survives a full process restart, not just an in-process retry; confirmed GTDB's server supports `Range` requests (`Accept-Ranges: bytes`, `206` responses) before relying on it. Verified working live — a killed-and-relaunched transfer picked up at "7 parts already uploaded" instead of starting over.
+- **S3 bucket lifecycle rule**: added `AbortIncompleteMultipartUpload` at 7 days, so a stalled or abandoned upload doesn't sit there accruing storage charges indefinitely; long enough not to abort a transfer that's still legitimately in progress at this connection's speed.
+- **Power settings check**: confirmed sleep-after-idle is already `Never` on both AC and battery (so the machine isn't auto-sleeping mid-transfer); this machine doesn't expose a lid-close-action setting at all (no lid sensor detected), so that wasn't a factor either. The read-timeout crash above was a genuine network blip, not the laptop sleeping.
 
 ## Blocked on Track 1 — M1 Pro not yet verified
 
@@ -62,6 +65,9 @@ The key handed off for this was a root account key (unrestricted account access)
 
 **Why CSV output for the parsed taxonomy, not parquet?**
 `pandas.to_parquet` needs `pyarrow` or `fastparquet`, neither of which is a project dependency yet. CSV needed nothing new and is plenty fast at this row count (~900K rows). Worth revisiting once Week 2's differencing pipeline is built on top of it.
+
+**Why resume from S3's multipart state instead of a local progress file?**
+A local file can go stale (crash before writing it, disk not synced) and is one more thing to keep in sync with reality. S3 already tracks exactly which parts landed, for as long as the multipart upload is open — asking it directly is strictly more reliable than maintaining a second copy of that fact on disk.
 
 ## Outputs
 
