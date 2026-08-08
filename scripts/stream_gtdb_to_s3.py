@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 
-from darkmatter.data.s3_stream import stream_to_s3_with_retries
+from darkmatter.data.s3_stream import resumable_stream_to_s3
 
 BASE_URL = "https://data.gtdb.ecogenomic.org/releases"
 
@@ -24,7 +24,7 @@ def main() -> None:
     n = args.release.lstrip("Rr")
     url = f"{BASE_URL}/release{n}/{n}.0/genomic_files_reps/gtdb_proteins_aa_reps_r{n}.tar.gz"
     key = f"gtdb/{args.release}/genomic_files_reps/gtdb_proteins_aa_reps_r{n}.tar.gz"
-    stream_to_s3_with_retries(url, args.bucket, key, args.profile)
+    resumable_stream_to_s3(url, args.bucket, key, args.profile)
 
 
 if __name__ == "__main__":
