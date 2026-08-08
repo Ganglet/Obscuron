@@ -19,9 +19,9 @@ Configure the compute environment on both hardware targets (RTX 4060 laptop, M1 
 - **IAM cleanup**: replaced root-account access-key usage with two scoped IAM users (`darkmatter-track1`, `darkmatter-track2`), each limited to read/write on just this one bucket.
 - **`src/darkmatter/data/preprocess.py`**: parses the raw taxonomy TSVs into a structured table (one column per rank — domain/phylum/class/order/family/genus/species) plus summary counts. Confirmed real numbers: R232 has 901,341 genomes / 199,923 species vs. R207's 317,542 / 65,703 — database size nearly tripled across the interval, a good early signal for the go/no-go positive-label estimate.
 
-## Open item — M1 Pro not yet verified
+## Blocked on Track 1 — M1 Pro not yet verified
 
-RTX 4060 is confirmed working (`scripts/smoke_test.py` — ESM-2 loads and embeds; Genos-m hits the VRAM ceiling documented in `docs/reproducibility.md`). `src/darkmatter/device.py` already has an MPS code path (fp16, no quantization — bitsandbytes doesn't support MPS), but it has **not been run on real Apple Silicon hardware** — this session is on Windows, with no M1 Pro to test against. Whoever has that machine needs to run:
+RTX 4060 is confirmed working (`scripts/smoke_test.py` — ESM-2 loads and embeds; Genos-m hits the VRAM ceiling documented in `docs/reproducibility.md`). `src/darkmatter/device.py` already has an MPS code path (fp16, no quantization — bitsandbytes doesn't support MPS), but it has **not been run on real Apple Silicon hardware**. The M1 Pro is Angshuman's (Track 1) machine, not Track 2's — this isn't something I can finish from here, it needs him to run it on his own laptop:
 
 ```bash
 uv sync
