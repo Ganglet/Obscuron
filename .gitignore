@@ -6,7 +6,7 @@ __pycache__/
 uv.lock.bak
 
 # Data & model artifacts (never tracked — too large, not source)
-data/
+/data/
 models_cache/
 .cache/
 *.npy
@@ -14,6 +14,9 @@ models_cache/
 *.pt
 *.h5
 *.hmm
+
+# Reference documents (large binary, not source)
+Illuminating_Microbial_Dark_Matter_Blueprint.docx
 
 # OS / editor
 .DS_Store
