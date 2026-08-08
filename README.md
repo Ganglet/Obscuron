@@ -25,6 +25,27 @@ Embed → model the boundary of "known" → assign a calibrated novelty score (E
 
 ---
 
+## Current implementation
+
+Phase 1 code — embedding backends, GTDB/Pfam ingestion, snapshot fetch/differencing — lives in `src/darkmatter/` (`uv`/`pyproject.toml`) rather than the `obscuron/` package below. The package layout described in this README is the target structure; `src/darkmatter/` is where Track 2's working, tested Phase 1 pipeline actually runs today. Reconciling the two (rename vs. re-point) is an open item between tracks, not yet decided.
+
+```bash
+uv sync
+
+# verify both embedding backends load on this machine
+uv run python scripts/smoke_test.py
+
+# fetch a reference-database release (metadata-only, not full sequence data)
+uv run python scripts/fetch_snapshot.py --source gtdb --release R232 --metadata-only
+
+# embed a FASTA file
+uv run python scripts/embed.py --model genos-m --fasta sequences.fasta --out out/genos_m.npy
+```
+
+See `docs/reproducibility.md` for hardware findings (Genos-m VRAM constraints) and dataset provenance notes.
+
+---
+
 ## Setup
 
 ```bash
@@ -45,15 +66,18 @@ Reference-database snapshots, sequences, and cached embeddings are **not stored 
 
 ```
 Obscuron/
-├── obscuron/          # source package (built phase by phase)
+├── obscuron/          # target source package (not yet populated — see "Current implementation")
+├── src/darkmatter/    # actual Phase 1 implementation: device policy, embeddings, data fetchers
 ├── scripts/           # data build, embedding extraction, evaluation drivers
 ├── configs/           # version-controlled run configs (fixed seeds)
+├── config/            # snapshot boundaries, model/quantization policy (used by src/darkmatter)
 ├── data/              # gitignored — snapshots, sequences, embeddings (built locally)
 ├── figures/           # gitignored — output figures from evaluation
 ├── Paper/             # gitignored — reference PDFs (cited in ACKNOWLEDGEMENTS)
 ├── Documentation/
 │   ├── problems_and_decisions.md              # numbered decision log (D…, P#-D…)
 │   └── 01_track1_phase1_benchmark_scope.md    # Phase 1 Track 1 working record
+├── docs/              # reproducibility standards, experiment log (Track 2)
 ├── README.md
 ├── LICENSE
 ├── ACKNOWLEDGEMENTS.md
