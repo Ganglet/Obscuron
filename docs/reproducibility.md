@@ -100,6 +100,38 @@ unavailable at any phase boundary, ESM-2 becomes the primary embedding
 source with no change to the surrounding methodology"). The ESM-2 backend
 is fully verified working (`scripts/smoke_test.py --skip-genos-m`).
 
+## M1 Pro (Apple Silicon) compute environment — verified 2026-08-08
+
+Closes the "M1 Pro not yet verified" open item from `Track_2_Week_1.md`. Run on
+the Track 1 machine (MacBook Pro, Apple M1 Pro, 10 cores, **16 GB unified
+memory**, macOS) — the hardware Track 2 could not reach from the 4060.
+
+- **Environment builds cleanly**: `uv 0.12.3` → `uv sync` on macOS with no
+  manual intervention. `bitsandbytes` is correctly skipped (pyproject marker
+  `platform_system != 'Darwin'`); torch 2.13.0 installs with MPS support; the
+  cu121 torch index applies only to win/linux.
+- **ESM-2 verified working on MPS**: `scripts/smoke_test.py --skip-genos-m`
+  detects `mps`, loads `facebook/esm2_t30_150M_UR50D` (hidden dim 640, fp16,
+  no quantization), embeds toy proteins → `(3, 640)`. First run 305.6s
+  (dominated by the ~600MB HF download; weight-load itself <1s, cached
+  thereafter). The transformers LOAD REPORT (`lm_head` UNEXPECTED, `pooler`
+  MISSING) is benign — expected when an ESM-2 masked-LM checkpoint is loaded
+  into `AutoModel`; the backend mean-pools `last_hidden_state` and never
+  touches the pooler.
+- **Genos-m on M1 Pro — not yet run definitively; a different regime from the
+  4060**: on MPS `device.py` loads fp16, no quantization (~9.4GB weights).
+  Unlike the 4060's hard 8GB VRAM wall, Apple unified memory has no separate
+  GPU-memory ceiling — MPS can address a large fraction of the 16GB — so a fit
+  is *not* foreclosed the way it is on the 4060. But 9.4GB weights +
+  activations + macOS against 16GB physical is tight and may swap-thrash or be
+  OOM-killed (the same ceiling that killed Track 2's CPU attempt). Left as a
+  deliberate, supervised test rather than run inline, to avoid a ~9GB download
+  and a possible freeze on the active development machine.
+
+**Net for Track 1 development**: ESM-2 on MPS is the confirmed working backend
+on this machine — consistent with the 4060 and with blueprint §7/D3. Genos-m
+remains the cloud/cluster question (blueprint §9, D9).
+
 ## Environment provenance
 
 - `pyproject.toml` + `uv.lock` pin exact dependency versions — commit
