@@ -34,6 +34,31 @@ decision**. Before Phase 1's go/no-go gate, confirm:
    50–100 minimum (blueprint §7) — estimate this before building the full
    differencing pipeline on top of it.
 
+## GTDB snapshot fetch (2026-08-08)
+
+- `config/snapshots.yaml` `current.gtdb_release` bumped R226 → R232: R226
+  was no longer GTDB's latest release (confirmed against
+  `data.gtdb.ecogenomic.org/releases/`, R232 published 2026-04-04). This
+  is only keeping "current" current — the historical/current pairing
+  itself is still Track 1's call (open decision above).
+- Bug found and fixed in `src/darkmatter/data/gtdb.py`: the metadata-file
+  extension is **not stable across releases** — R232 serves
+  `bac120_metadata_r232.tsv.gz`, R207 serves `bac120_metadata_r207.tar.gz`.
+  `fetch_gtdb_release` now tries `.tsv.gz` and falls back to `.tar.gz` on
+  a 404.
+- Metadata-only fetch for both R232 and R207 (taxonomy + quality/rep-genome
+  metadata + MD5SUM/FILE_DESCRIPTIONS, ~370MB total) completed and MD5-verified
+  against each release's `MD5SUM.txt` — all 8 files match.
+- **Scale finding, relevant beyond Phase 1**: the representative-genome
+  protein FASTA (`genomic_files_reps/gtdb_proteins_aa_reps_r{N}.tar.gz`) —
+  what actually feeds Genos-m/ESM-2 embedding — is **~123GB on R232**, not
+  the small single-file grab it might sound like. Sibling files
+  (`gtdb_genomes_reps`, `gtdb_proteins_nt_reps`) are ~179GB and ~174GB.
+  None of this is fetched by `metadata_only=True` or by default; a new
+  `fetch_gtdb_reps_proteins()` function fetches it explicitly, on purpose,
+  once storage (local disk vs. S3) and any subsetting strategy are decided.
+  Budget for this before Week 2's embedding comparison.
+
 ## Genos-m hardware fit (finding from Phase 1 validation)
 
 `scripts/smoke_test.py` was used to actually load Genos-m on the project's

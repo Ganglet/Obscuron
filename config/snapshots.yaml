@@ -6,6 +6,11 @@
 # GTDB releases, which is a reasonable starting point for estimating the
 # retrospective positive-label set size (blueprint §7 go/no-go criterion).
 #
+# 2026-08-08: bumped current from R226 to R232 — R226 is no longer GTDB's
+# latest release (confirmed against data.gtdb.ecogenomic.org/releases/,
+# R232 published 2026-04-04). This is just keeping "current" actually
+# current; the historical/current PAIRING itself is still Track 1's call.
+#
 # Note: Pfam is now folded into InterPro; 37.0 (June 2024) is the last
 # standalone Pfam-A release. If a more recent "family added" signal is
 # needed, InterPro release notes may be a better primary resource than Pfam
@@ -16,7 +21,7 @@ historical:
   pfam_release: "35.0"   # November 2021
 
 current:
-  gtdb_release: "R226"   # January 2026 (latest as of writing)
+  gtdb_release: "R232"   # April 2026 (latest as of 2026-08-08)
   pfam_release: "37.0"   # June 2024 (latest standalone Pfam-A release)
 
 # Minimum viable positive-label set size before Phase 2 begins (blueprint §7).
