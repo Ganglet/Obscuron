@@ -2,7 +2,7 @@
 
 **Phase:** Week 1 — Environment Setup & Snapshot Boundary Definition
 **Owner:** Track 2 (Rayyan)
-**Status:** Complete on RTX 4060; M1 Pro verification still needs someone with physical access to that machine to run it (see "Open item" below). Both GTDB snapshots fetched, MD5-checked, and parsed; S3 pipeline built and transferring.
+**Status:** Complete on both hardware targets — RTX 4060 verified here, M1 Pro verified by Track 1 (see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed; S3 pipeline built and transferring.
 
 ## Objective
 
@@ -22,15 +22,12 @@ Configure the compute environment on both hardware targets (RTX 4060 laptop, M1 
 - **S3 bucket lifecycle rule**: added `AbortIncompleteMultipartUpload` at 7 days, so a stalled or abandoned upload doesn't sit there accruing storage charges indefinitely; long enough not to abort a transfer that's still legitimately in progress at this connection's speed.
 - **Power settings check**: confirmed sleep-after-idle is already `Never` on both AC and battery (so the machine isn't auto-sleeping mid-transfer); this machine doesn't expose a lid-close-action setting at all (no lid sensor detected), so that wasn't a factor either. The read-timeout crash above was a genuine network blip, not the laptop sleeping.
 - **Survive a full restart, not just a process crash**: registered a logon-triggered scheduled task (`DarkMatterGtdbResume`) that runs `data/.ops/resume_transfer.ps1` 60 seconds after login. The script checks whether the transfer is already running or already finished and only relaunches it when it finds it stopped and incomplete — safe to fire on every login, never duplicates the process. Needed an elevated (admin) PowerShell to register; a non-elevated `schtasks /create` was denied by policy on this machine.
+- **Per-part bounded range requests**: even with resume working, a live run kept dying at a suspiciously consistent ~100-108MB into every attempt — not random flakiness, but a strong sign of a connection-duration limit somewhere on the network path (router/ISP connection tracking, most likely), not a byte-count limit. The old code opened one open-ended `Range: bytes=X-` connection for the *entire remaining file* and chunked it internally, so it was always going to hit that wall. Switched to requesting each ~50MB part as its own bounded `Range: bytes=start-end`, so every part gets a fresh connection. Speed went from ~0.8MB/s-with-constant-drops to bursts of 7MB/s+ immediately after.
+- **Checksum bug that broke completion after a full transfer**: R207 fully downloaded (100%, 43.19GB) and then failed at `complete_multipart_upload` with `InvalidRequest: missing checksum for part 1`. Recent botocore defaults to requiring a CRC32 checksum per part on S3 multipart uploads, but `upload_part()` here never computed/sent one — a bug latent since the very first multipart upload was created, only surfacing once a transfer finally reached 100% for the first time. The already-uploaded parts couldn't be retroactively fixed, so that upload had to be aborted and the 43GB re-transferred from zero. Fix: `Config(request_checksum_calculation="when_required")` on the S3 client, verified with a small throwaway 2-part upload before touching the real transfer again.
 
-## Blocked on Track 1 — M1 Pro not yet verified
+## M1 Pro — verified by Track 1
 
-RTX 4060 is confirmed working (`scripts/smoke_test.py` — ESM-2 loads and embeds; Genos-m hits the VRAM ceiling documented in `docs/reproducibility.md`). `src/darkmatter/device.py` already has an MPS code path (fp16, no quantization — bitsandbytes doesn't support MPS), but it has **not been run on real Apple Silicon hardware**. The M1 Pro is Angshuman's (Track 1) machine, not Track 2's — this isn't something I can finish from here, it needs him to run it on his own laptop:
-
-```bash
-uv sync
-uv run python scripts/smoke_test.py --skip-genos-m   # ESM-2 first; MPS + bitsandbytes can't quantize Genos-m anyway
-```
+Closed. RTX 4060 confirmed working here (`scripts/smoke_test.py` — ESM-2 loads and embeds; Genos-m hits the VRAM ceiling documented in `docs/reproducibility.md`). Angshuman ran the M1 Pro side on his own machine (2026-08-08): ESM-2 verified working on MPS; Genos-m deliberately left untested rather than risk an OOM freeze on his dev machine — see `docs/reproducibility.md` "M1 Pro (Apple Silicon) compute environment" for the full write-up, including why unified memory makes Genos-m's fit less clear-cut than the 4060's hard VRAM wall.
 
 ## Flag — full ESMFold will need cloud GPU or cluster time
 
@@ -69,6 +66,12 @@ The key handed off for this was a root account key (unrestricted account access)
 
 **Why resume from S3's multipart state instead of a local progress file?**
 A local file can go stale (crash before writing it, disk not synced) and is one more thing to keep in sync with reality. S3 already tracks exactly which parts landed, for as long as the multipart upload is open — asking it directly is strictly more reliable than maintaining a second copy of that fact on disk.
+
+**Why bounded per-part ranges instead of one streaming request?**
+A single connection streaming tens of GB is at the mercy of whatever kills long-lived connections on this network. Bounded ~50MB requests mean each one only needs to survive a short window, and a fresh connection gets negotiated for every part regardless of what happened to the last one.
+
+**Why `request_checksum_calculation="when_required"` instead of just adding checksums?**
+Properly supporting checksums (compute CRC32 per part, pass it to `upload_part`, include it in `complete_multipart_upload`) is the more "correct" fix and adds real integrity verification. Opting out was faster to ship correctly and verify in isolation after already losing a full 43GB transfer to this bug once — worth revisiting if data integrity verification becomes a real requirement later.
 
 ## Outputs
 
