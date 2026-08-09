@@ -48,4 +48,5 @@ An earlier capstone blueprint (MRI operator-shift conformal prediction, `Capston
 
 _Phase 1 Track 1 working record: `01_track1_phase1_benchmark_scope.md`. Log decisions as `P1-D#` below as they are made._
 
-<!-- P1-D1 — ... -->
+### P1-D1 — M1 Pro compute environment verified for ESM-2 on MPS; Genos-m deferred to a supervised test / cloud [Phase 1]
+Track 2 (Rayyan) verified the environment on the RTX 4060 but could not test the M1 Pro — it is the Track 1 machine, not his. Ran `uv sync` + `scripts/smoke_test.py --skip-genos-m` on the Track 1 MacBook Pro (M1 Pro, **16GB unified memory**): environment builds cleanly (bitsandbytes correctly skipped on Darwin, torch 2.13.0 MPS), and ESM-2 loads + embeds on MPS → `(3, 640)`. Genos-m (fp16, ~9.4GB, no MPS quantization) was **not** run inline: 16GB unified is tight and the 4060 evidence points to OOM. Apple unified memory is a genuinely different regime from the 4060's hard 8GB VRAM wall, so a fit is not foreclosed — left as a deliberate supervised test (~9GB download + freeze risk on the active machine). ESM-2 confirmed as the practical M1 Pro backend, matching blueprint §7/D3; Genos-m at scale stays the cloud/cluster question (D9). Full detail: `docs/reproducibility.md` → "M1 Pro (Apple Silicon) compute environment".

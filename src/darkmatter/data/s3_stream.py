@@ -35,8 +35,17 @@ import time
 
 import boto3
 import requests
+from botocore.config import Config
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+# Recent botocore versions default to attaching a CRC32 checksum requirement
+# to every S3 multipart upload (request_checksum_calculation="when_supported").
+# upload_part() here doesn't compute/send one, so complete_multipart_upload
+# fails at the very end with "missing checksum for part N" — found the hard
+# way after a full 43GB transfer completed and then couldn't be finalized.
+# "when_required" opts back out: no checksum unless the operation demands one.
+_S3_CONFIG = Config(request_checksum_calculation="when_required")
 
 PART_BYTES = 50 * 1024 * 1024  # smaller than S3's 100MB default: fits well inside whatever
 # connection-duration limit is killing long transfers on this network, confirmed by trial.
@@ -90,7 +99,7 @@ def _fetch_range(http: requests.Session, url: str, start: int, end: int, max_ret
 
 
 def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str) -> None:
-    s3 = boto3.Session(profile_name=profile).client("s3")
+    s3 = boto3.Session(profile_name=profile).client("s3", config=_S3_CONFIG)
     http = _http_session()
 
     head = http.head(url, timeout=(15, 60))
