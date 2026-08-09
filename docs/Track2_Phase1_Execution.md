@@ -2,14 +2,14 @@
 
 **Phase:** Week 1 — Environment Setup & Snapshot Boundary Definition
 **Owner:** Track 2 (Rayyan)
-**Status:** Complete. Both hardware targets verified (RTX 4060 here, M1 Pro by Track 1 — see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed. R207's full protein FASTA (43.19GB) uploaded to S3 and verified — `s3api head-object` confirms 43,190,024,227 bytes, exact match. R232 deliberately not pulled — see "Course correction" below.
+**Status:** Complete. Both hardware targets verified (RTX 4060 here, M1 Pro by Track 1 — see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed. R207's full protein FASTA (43.19GB) uploaded to S3 and verified — `s3api head-object` confirms 43,190,024,227 bytes, exact match. R232's full protein FASTA (131.95GB) explicitly requested 2026-08-10 despite the "Course correction" below (ahead of Week 2 need, not for the validation gate) — transferring.
 
 ## Course correction — full protein-set download was over-scoped
 
 Track 1 flagged (2026-08-09) that warehousing the entire representative-genome protein set for both releases doesn't match what the go/no-go gate actually needs — a stratified sample sized for a few hundred positive labels, not every genome in GTDB. Concretely:
 
 - **R207 (43GB)** — keep pulling. Still needed as the source pool for retrospective validation.
-- **R232 (123GB)** — dropped. Was queued to auto-start after R207; broke the chain in `data/.ops/run_gtdb_transfer.sh` before it could. Full protein set is for the eventual application demo, not the validation gate.
+- **R232 (131.95GB)** — was dropped, then explicitly requested anyway on 2026-08-10 (see Status above) — Track 2's call to pull it ahead of when it's strictly needed, not a reversal of Track 1's scope guidance for the validation gate itself.
 - **`nt_reps` / `genomes` (174GB / 179GB)** — never pulled, staying that way.
 - **Implication for Week 2**: the embedding pipeline should stream sequences through the model and persist only derived artifacts (embeddings, dark/characterized labels, manifest), not warehouse raw FASTA — a different shape than "download everything, then process" which is what the S3 pipeline above was built for. The stratified sampling method itself (N per phylum vs. fixed random, etc.) is Track 1's methodology call, still to be specified.
 - **Checksum fix revisited**: `request_checksum_calculation="when_required"` (above) sidesteps the completion error rather than adding real integrity verification. Track 1 suggested computing per-part checksums or verifying the multipart ETag instead — more correct, not yet done.
@@ -89,7 +89,7 @@ Properly supporting checksums (compute CRC32 per part, pass it to `upload_part`,
 |---|---|
 | `data/raw/gtdb_R232/`, `data/raw/gtdb_R207/` | Fetched, MD5-verified metadata for both snapshots (gitignored, local only). |
 | `data/manifest.json` | Provenance record — source, release, fetch timestamp, file sizes for every fetch. |
-| `s3://darkmatter-gtdb-067620369122/gtdb/` | Same metadata plus R207's full representative-genome protein FASTA (43.19GB, verified). R232 deliberately not pulled — see "Course correction". |
+| `s3://darkmatter-gtdb-067620369122/gtdb/` | Same metadata plus R207's full representative-genome protein FASTA (43.19GB, verified). R232 (131.95GB) transferring — see "Course correction". |
 | `src/darkmatter/data/gtdb.py`, `s3_stream.py` | Fetcher and streaming-upload code, committed on `week-01-setup-ingestion`. |
 | `config/snapshots.yaml` | Current release corrected to R232; historical/current pairing still open pending Track 1. |
 | `data/processed/gtdb_R232/`, `gtdb_R207/` | Parsed taxonomy table (`taxonomy.csv`) + summary stats (`summary.json`) per release, gitignored, local only. |
