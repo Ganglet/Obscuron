@@ -2,7 +2,7 @@
 
 **Phase:** Week 1 — Environment Setup & Snapshot Boundary Definition
 **Owner:** Track 2 (Rayyan)
-**Status:** Complete on both hardware targets — RTX 4060 verified here, M1 Pro verified by Track 1 (see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed; S3 pipeline built and transferring. Scope corrected 2026-08-09 — see "Course correction" below.
+**Status:** Complete. Both hardware targets verified (RTX 4060 here, M1 Pro by Track 1 — see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed. R207's full protein FASTA (43.19GB) uploaded to S3 and verified — `s3api head-object` confirms 43,190,024,227 bytes, exact match. R232 deliberately not pulled — see "Course correction" below.
 
 ## Course correction — full protein-set download was over-scoped
 
@@ -89,7 +89,7 @@ Properly supporting checksums (compute CRC32 per part, pass it to `upload_part`,
 |---|---|
 | `data/raw/gtdb_R232/`, `data/raw/gtdb_R207/` | Fetched, MD5-verified metadata for both snapshots (gitignored, local only). |
 | `data/manifest.json` | Provenance record — source, release, fetch timestamp, file sizes for every fetch. |
-| `s3://darkmatter-gtdb-067620369122/gtdb/` | Same metadata plus (in progress) the full representative-genome protein FASTA for both releases. |
+| `s3://darkmatter-gtdb-067620369122/gtdb/` | Same metadata plus R207's full representative-genome protein FASTA (43.19GB, verified). R232 deliberately not pulled — see "Course correction". |
 | `src/darkmatter/data/gtdb.py`, `s3_stream.py` | Fetcher and streaming-upload code, committed on `week-01-setup-ingestion`. |
 | `config/snapshots.yaml` | Current release corrected to R232; historical/current pairing still open pending Track 1. |
 | `data/processed/gtdb_R232/`, `gtdb_R207/` | Parsed taxonomy table (`taxonomy.csv`) + summary stats (`summary.json`) per release, gitignored, local only. |
