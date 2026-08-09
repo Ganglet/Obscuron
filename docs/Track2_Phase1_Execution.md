@@ -2,7 +2,17 @@
 
 **Phase:** Week 1 — Environment Setup & Snapshot Boundary Definition
 **Owner:** Track 2 (Rayyan)
-**Status:** Complete on both hardware targets — RTX 4060 verified here, M1 Pro verified by Track 1 (see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed; S3 pipeline built and transferring.
+**Status:** Complete on both hardware targets — RTX 4060 verified here, M1 Pro verified by Track 1 (see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed; S3 pipeline built and transferring. Scope corrected 2026-08-09 — see "Course correction" below.
+
+## Course correction — full protein-set download was over-scoped
+
+Track 1 flagged (2026-08-09) that warehousing the entire representative-genome protein set for both releases doesn't match what the go/no-go gate actually needs — a stratified sample sized for a few hundred positive labels, not every genome in GTDB. Concretely:
+
+- **R207 (43GB)** — keep pulling. Still needed as the source pool for retrospective validation.
+- **R232 (123GB)** — dropped. Was queued to auto-start after R207; broke the chain in `data/.ops/run_gtdb_transfer.sh` before it could. Full protein set is for the eventual application demo, not the validation gate.
+- **`nt_reps` / `genomes` (174GB / 179GB)** — never pulled, staying that way.
+- **Implication for Week 2**: the embedding pipeline should stream sequences through the model and persist only derived artifacts (embeddings, dark/characterized labels, manifest), not warehouse raw FASTA — a different shape than "download everything, then process" which is what the S3 pipeline above was built for. The stratified sampling method itself (N per phylum vs. fixed random, etc.) is Track 1's methodology call, still to be specified.
+- **Checksum fix revisited**: `request_checksum_calculation="when_required"` (above) sidesteps the completion error rather than adding real integrity verification. Track 1 suggested computing per-part checksums or verifying the multipart ETag instead — more correct, not yet done.
 
 ## Objective
 
