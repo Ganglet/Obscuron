@@ -98,6 +98,22 @@ def _fetch_range(http: requests.Session, url: str, start: int, end: int, max_ret
     raise RuntimeError("unreachable")
 
 
+def _upload_part(s3, bucket: str, key: str, upload_id: str, part_number: int, data: bytes, max_retries: int = 15) -> dict:
+    """upload_part with its own retry — botocore's built-in retries don't
+    cover every transient failure (an EndpointConnectionError crashed a live
+    run with no retry at all before this existed)."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            return s3.upload_part(Bucket=bucket, Key=key, UploadId=upload_id, PartNumber=part_number, Body=data)
+        except Exception as e:
+            if attempt == max_retries:
+                raise
+            wait = min(5 * attempt, 60)
+            print(f"  upload_part {part_number} attempt {attempt}/{max_retries} failed ({e}), retrying in {wait}s", flush=True)
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
+
+
 def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str) -> None:
     s3 = boto3.Session(profile_name=profile).client("s3", config=_S3_CONFIG)
     http = _http_session()
@@ -128,7 +144,7 @@ def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str) -> Non
 
         data = _fetch_range(http, url, range_start, range_end)
 
-        part_resp = s3.upload_part(Bucket=bucket, Key=key, UploadId=upload_id, PartNumber=next_part_number, Body=data)
+        part_resp = _upload_part(s3, bucket, key, upload_id, next_part_number, data)
         completed_parts.append({"PartNumber": next_part_number, "ETag": part_resp["ETag"]})
         bytes_done += len(data)
         next_part_number += 1
