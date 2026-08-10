@@ -66,8 +66,12 @@ PART_BYTES = 50 * 1024 * 1024  # smaller than S3's 100MB default: fits well insi
 # Conservative on purpose: this network is sensitive to connection churn
 # (periodic SSL-inspection failures, a connection-duration limit that
 # forced the per-part design above) — too much concurrency risks making
-# both worse, not just faster. 4 is enough to stop the pipe sitting idle.
-MAX_WORKERS = 4
+# both worse, not just faster. Dropped from 4 to 2 after a live run showed
+# 3 workers hit the identical failure (same byte offset) at the same
+# instant — the local SSL-inspection layer appears to interrupt every open
+# connection at once periodically, so more concurrent connections just
+# means more of them wedge simultaneously, not more throughput.
+MAX_WORKERS = 2
 
 
 def _http_session() -> requests.Session:
