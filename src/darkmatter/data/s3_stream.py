@@ -63,15 +63,17 @@ _S3_CONFIG = Config(request_checksum_calculation="when_required")
 PART_BYTES = 50 * 1024 * 1024  # smaller than S3's 100MB default: fits well inside whatever
 # connection-duration limit is killing long transfers on this network, confirmed by trial.
 
-# Conservative on purpose: this network is sensitive to connection churn
-# (periodic SSL-inspection failures, a connection-duration limit that
-# forced the per-part design above) — too much concurrency risks making
-# both worse, not just faster. Dropped from 4 to 2 after a live run showed
-# 3 workers hit the identical failure (same byte offset) at the same
-# instant — the local SSL-inspection layer appears to interrupt every open
-# connection at once periodically, so more concurrent connections just
-# means more of them wedge simultaneously, not more throughput.
-MAX_WORKERS = 2
+# Was dropped from 4 to 2 after live runs showed multiple workers hitting
+# the identical failure (same byte offset) at the same instant — traced to
+# McAfee's SSL-inspection layer interrupting every open connection at once.
+# McAfee is now fully uninstalled (confirmed via Get-Service/Get-Process,
+# 2026-08-10) and isolated curl/aws-cli tests show per-connection speed
+# capped around 1.5-2.7MB/s regardless of local software — well under the
+# 200Mbps connection's real capacity. If that cap is per-connection (GTDB
+# server-side) rather than total-to-this-IP, more parallel connections
+# should raise aggregate throughput now that the thing wedging them is
+# gone. Raised back up to re-test that; drop back to 2 if it wedges again.
+MAX_WORKERS = 6
 
 
 def _http_session() -> requests.Session:
