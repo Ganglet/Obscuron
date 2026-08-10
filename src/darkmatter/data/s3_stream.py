@@ -3,7 +3,7 @@ dropped connection continues from the last uploaded byte instead of
 restarting the whole file.
 
 Needed for the GTDB representative-genome protein FASTA archives
-(R232: ~123GB, R207: ~40GB) — see docs/reproducibility.md "GTDB snapshot
+(R232: ~132GB, R207: ~43GB) — see docs/reproducibility.md "GTDB snapshot
 fetch". Neither this machine's C: (near-full) nor E: (85GB free) can hold
 either file whole, so download and upload happen concurrently: each part
 is fetched as its own bounded HTTP Range request and handed straight to
@@ -22,16 +22,29 @@ Requesting `Range: bytes=start-end` per part instead gets a fresh
 connection every ~50MB, so a mid-transfer network blip only costs one
 part's retry, not the entire rest of the file.
 
+Parts fetch+upload concurrently (small thread pool), not one at a time.
+Found necessary after a real wifi-plan upgrade (200Mbps) didn't move
+sustained throughput at all — the old sequential "fetch, then upload,
+then fetch the next one" design left the pipe idle half the time no
+matter how fast it was, plus every part pays a full fresh TLS handshake
+(compounded by local SSL-inspection software), so overhead dominated
+over actual transfer time. Concurrency overlaps that idle/handshake time
+across parts instead of paying it serially.
+
 Resume works because S3 itself is the source of truth for progress, not a
 local state file: on start, list_multipart_uploads finds any in-progress
 upload for this key, list_parts says which parts already landed, and the
 GTDB fetch resumes from the next byte after that (confirmed their server
-supports Range requests — Accept-Ranges: bytes, 206 responses).
+supports Range requests — Accept-Ranges: bytes, 206 responses). This
+holds regardless of how the remaining parts get fetched, so switching to
+concurrent workers never risks already-uploaded parts.
 """
 
 from __future__ import annotations
 
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
 import requests
@@ -49,6 +62,12 @@ _S3_CONFIG = Config(request_checksum_calculation="when_required")
 
 PART_BYTES = 50 * 1024 * 1024  # smaller than S3's 100MB default: fits well inside whatever
 # connection-duration limit is killing long transfers on this network, confirmed by trial.
+
+# Conservative on purpose: this network is sensitive to connection churn
+# (periodic SSL-inspection failures, a connection-duration limit that
+# forced the per-part design above) — too much concurrency risks making
+# both worse, not just faster. 4 is enough to stop the pipe sitting idle.
+MAX_WORKERS = 4
 
 
 def _http_session() -> requests.Session:
@@ -114,11 +133,10 @@ def _upload_part(s3, bucket: str, key: str, upload_id: str, part_number: int, da
     raise RuntimeError("unreachable")
 
 
-def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str) -> None:
-    s3 = boto3.Session(profile_name=profile).client("s3", config=_S3_CONFIG)
-    http = _http_session()
+def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str, max_workers: int = MAX_WORKERS) -> None:
+    s3 = boto3.Session(profile_name=profile).client("s3", config=_S3_CONFIG)  # boto3 clients are thread-safe
 
-    head = http.head(url, timeout=(15, 60))
+    head = requests.head(url, timeout=(15, 60))
     head.raise_for_status()
     total_bytes = int(head.headers["Content-Length"])
 
@@ -131,37 +149,50 @@ def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str) -> Non
         parts = []
         print(f"[{key}] starting new upload ({total_bytes / 1e9:.2f}GB)", flush=True)
 
-    completed_parts = [{"PartNumber": p["PartNumber"], "ETag": p["ETag"]} for p in parts]
+    completed_parts: dict[int, str] = {p["PartNumber"]: p["ETag"] for p in parts}
     bytes_done = sum(p["Size"] for p in parts)
     next_part_number = (parts[-1]["PartNumber"] + 1) if parts else 1
 
+    # Pre-compute every remaining (part_number, start, end) triple up front so
+    # part numbers stay deterministic regardless of which worker finishes first.
+    ranges = []
+    offset = bytes_done
+    part_number = next_part_number
+    while offset < total_bytes:
+        end = min(offset + PART_BYTES, total_bytes) - 1
+        ranges.append((part_number, offset, end))
+        offset = end + 1
+        part_number += 1
+
     start_time = time.monotonic()
-    last_report = start_time
+    state_lock = threading.Lock()
+    state = {"bytes_done": bytes_done, "last_report": start_time}
 
-    while bytes_done < total_bytes:
-        range_start = bytes_done
-        range_end = min(bytes_done + PART_BYTES, total_bytes) - 1
+    def process_one(pn: int, start: int, end: int) -> None:
+        http = _http_session()  # own session per task, no cross-thread sharing
+        data = _fetch_range(http, url, start, end)
+        part_resp = _upload_part(s3, bucket, key, upload_id, pn, data)
+        with state_lock:
+            completed_parts[pn] = part_resp["ETag"]
+            state["bytes_done"] += len(data)
+            now = time.monotonic()
+            if now - state["last_report"] > 30:
+                state["last_report"] = now
+                elapsed = now - start_time
+                rate_mb_s = (state["bytes_done"] / 1e6) / elapsed if elapsed > 0 else 0.0
+                pct = 100 * state["bytes_done"] / total_bytes
+                eta_min = (total_bytes - state["bytes_done"]) / 1e6 / rate_mb_s / 60 if rate_mb_s > 0 else float("inf")
+                print(
+                    f"[{key}] {state['bytes_done'] / 1e9:.2f}GB / {total_bytes / 1e9:.2f}GB "
+                    f"({pct:.1f}%) {rate_mb_s:.1f}MB/s ETA {eta_min:.0f}min",
+                    flush=True,
+                )
 
-        data = _fetch_range(http, url, range_start, range_end)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(process_one, pn, s, e) for pn, s, e in ranges]
+        for future in as_completed(futures):
+            future.result()  # re-raise if a part exhausted its own retries
 
-        part_resp = _upload_part(s3, bucket, key, upload_id, next_part_number, data)
-        completed_parts.append({"PartNumber": next_part_number, "ETag": part_resp["ETag"]})
-        bytes_done += len(data)
-        next_part_number += 1
-
-        now = time.monotonic()
-        if now - last_report > 30:
-            last_report = now
-            elapsed = now - start_time
-            rate_mb_s = (bytes_done / 1e6) / elapsed if elapsed > 0 else 0.0
-            pct = 100 * bytes_done / total_bytes
-            eta_min = (total_bytes - bytes_done) / 1e6 / rate_mb_s / 60 if rate_mb_s > 0 else float("inf")
-            print(
-                f"[{key}] {bytes_done / 1e9:.2f}GB / {total_bytes / 1e9:.2f}GB "
-                f"({pct:.1f}%) {rate_mb_s:.1f}MB/s ETA {eta_min:.0f}min",
-                flush=True,
-            )
-
-    completed_parts.sort(key=lambda p: p["PartNumber"])
-    s3.complete_multipart_upload(Bucket=bucket, Key=key, UploadId=upload_id, MultipartUpload={"Parts": completed_parts})
+    sorted_parts = [{"PartNumber": pn, "ETag": completed_parts[pn]} for pn in sorted(completed_parts)]
+    s3.complete_multipart_upload(Bucket=bucket, Key=key, UploadId=upload_id, MultipartUpload={"Parts": sorted_parts})
     print(f"[{key}] done", flush=True)
