@@ -108,10 +108,20 @@ def _existing_parts(s3, bucket: str, key: str, upload_id: str) -> list[dict]:
 
 
 def _fetch_range(http: requests.Session, url: str, start: int, end: int, max_retries: int = 15) -> bytes:
-    """Fetch one bounded byte range, retrying just this range on failure."""
+    """Fetch one bounded byte range, retrying just this range on failure.
+
+    Read timeout cut from 90s to 30s. requests' read timeout is silence
+    between bytes, not total transfer time — a slow-but-still-trickling
+    connection never hits it, since arriving data keeps resetting the
+    clock. It only fires when a connection goes fully silent (the zombie
+    socket behavior seen after network interface switches). 30s means a
+    worker abandons a truly-dead connection 3x faster than before instead
+    of sitting idle for up to 90s, with no risk to connections that are
+    just slow but still actually moving data.
+    """
     for attempt in range(1, max_retries + 1):
         try:
-            resp = http.get(url, headers={"Range": f"bytes={start}-{end}"}, timeout=(15, 90))
+            resp = http.get(url, headers={"Range": f"bytes={start}-{end}"}, timeout=(15, 30))
             resp.raise_for_status()
             return resp.content
         except Exception as e:
