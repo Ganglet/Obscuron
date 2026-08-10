@@ -166,7 +166,17 @@ def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str, max_wo
 
     start_time = time.monotonic()
     state_lock = threading.Lock()
-    state = {"bytes_done": bytes_done, "last_report": start_time}
+    # rate is measured incrementally (since the last report), not cumulatively
+    # since this run started — cumulative-since-start divides ALL bytes ever
+    # done (including whatever was already uploaded before this resume) by
+    # only this run's elapsed time, which massively overstates speed right
+    # after every resume and never fully corrects. Track a report_bytes/
+    # report_time baseline and reset it each time we print.
+    state = {
+        "bytes_done": bytes_done,
+        "last_report": start_time,
+        "report_bytes": bytes_done,
+    }
 
     def process_one(pn: int, start: int, end: int) -> None:
         http = _http_session()  # own session per task, no cross-thread sharing
@@ -176,10 +186,12 @@ def resumable_stream_to_s3(url: str, bucket: str, key: str, profile: str, max_wo
             completed_parts[pn] = part_resp["ETag"]
             state["bytes_done"] += len(data)
             now = time.monotonic()
-            if now - state["last_report"] > 30:
+            interval = now - state["last_report"]
+            if interval > 30:
+                interval_bytes = state["bytes_done"] - state["report_bytes"]
+                rate_mb_s = (interval_bytes / 1e6) / interval if interval > 0 else 0.0
                 state["last_report"] = now
-                elapsed = now - start_time
-                rate_mb_s = (state["bytes_done"] / 1e6) / elapsed if elapsed > 0 else 0.0
+                state["report_bytes"] = state["bytes_done"]
                 pct = 100 * state["bytes_done"] / total_bytes
                 eta_min = (total_bytes - state["bytes_done"]) / 1e6 / rate_mb_s / 60 if rate_mb_s > 0 else float("inf")
                 print(
