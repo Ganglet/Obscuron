@@ -17,22 +17,58 @@ dataset"; this file is where that standard lives.
   message explaining why the boundary moved (e.g. "widened interval,
   positive-label count was N=32, below the 50 minimum").
 
-## Open decision: snapshot boundary
+## Snapshot boundary — RESOLVED (2026-08-09, Track 1)
 
-`config/snapshots.yaml` currently defaults to GTDB R207 (Apr 2022) →
-R226 (Jan 2026) and Pfam 35.0 (Nov 2021) → 37.0 (Jun 2024). This is a
-placeholder chosen for a reasonable (~4 year) gap, **not yet a Track 1
-decision**. Before Phase 1's go/no-go gate, confirm:
+Confirmed by **P1-D2 / P1-D3 / P1-D5** (`problems_and_decisions.md`).
+**T₀ = GTDB R207 (Apr 2022) + Pfam 35.0 (Nov 2021); T₁ = GTDB R232 (Apr
+2026) + InterPro-latest.** Answering the three questions this section
+originally raised:
 
-1. Whether GTDB taxonomy differencing, Pfam family differencing, or both
-   are the primary signal for "characterized since the historical
-   snapshot."
-2. Whether the Pfam→InterPro transition (Pfam has had no standalone
-   release since 37.0/Jun 2024) means InterPro release notes are now a
-   better source of "family added" events than Pfam directly.
-3. Whether the projected positive-label count with this pair clears the
-   50–100 minimum (blueprint §7) — estimate this before building the full
-   differencing pipeline on top of it.
+1. **Signal for "characterised since"** = Pfam/InterPro family membership,
+   *not* GTDB taxonomy (GTDB supplies the sequences and a universe-growth
+   number, nothing about a gene gaining function). Dark-at-T₀ = no Pfam-35
+   hit at the GA threshold; characterised-by-T₁ = now hits a family new
+   since T₀.
+2. **Pfam→InterPro**: yes — Pfam froze at 37.0 (Jun 2024), so the *current*
+   signal is **InterPro-latest**. Pfam-35 stays the historical
+   dark-definition, and it aligns with ESM-2's ~2021 training cutoff,
+   minimising protein-arm embedding leakage (P1-D2).
+3. **Positive-label count**: proxy = +2,347 net new Pfam families 35→37 →
+   ~10⁴–10⁵ positives ≫ the 50–100 floor → **GO** (P1-D5); definitive
+   count = Week-2 hmmscan.
+
+## Data storage & subsetting standard (P1-D4)
+
+Raw reproducible public data (GTDB FASTAs) is **never warehoused** — it is
+freely, permanently hosted, so the pipeline streams needed sequences from
+the public mirror and persists only *derived* artifacts (embeddings,
+dark/characterised labels, and a manifest recording source URLs +
+checksums). The benchmark is a **principled stratified taxonomic subset** —
+required for local compute (the full R207 rep set is ~10⁸ proteins) and
+documented to avoid taxonomic bias. R232 proteins (application-time) and
+`nt_reps`/`genomes` are deferred; any S3 staging carries a 30–60 day
+lifecycle-expiry. This keeps the persistent footprint GB-scale and the S3
+bill near zero.
+
+## Embedding-model training cutoffs & per-arm leakage (P1-D7)
+
+Load-bearing for the retrospective claim — verified, not assumed:
+
+- **ESM-2** trained on **UniRef50 2021_04** (~late 2021). Pfam-35 was built
+  on UniProt 2021_03 and T₀ = R207 (Apr 2022), so ESM-2 predates every
+  T₀→T₁ characterisation event → **leakage-clean**. ESM-2 carries the
+  retrospective headline.
+- **Genos-m** pretrained on **GTDB R220 (released 24 Apr 2024)** + human-
+  microbiome MAGs/UHGV phages (model card). R220 is *inside* the T₀→T₁
+  window and is the same database the benchmark draws from → Genos-m has
+  seen the benchmark sequences and 2022→Apr-2024 characterisation events
+  leaked. It is self-supervised (raw DNA, no family labels) so the leak is
+  weak and conservative in direction (seen sequences → lower novelty →
+  harder to flag).
+- **Handling:** Genos-m positives are reported **restricted to post-R220
+  (Apr 2024→T₁)** for a clean number, and over the full 2022→T₁ window to
+  quantify the contamination. Genos-m remains the genome-FM comparison,
+  reported leakage-controlled.
 
 ## GTDB snapshot fetch (2026-08-08)
 
