@@ -2,7 +2,17 @@
 
 **Phase:** Week 1 — Environment Setup & Snapshot Boundary Definition
 **Owner:** Track 2 (Rayyan)
-**Status:** Complete on RTX 4060; M1 Pro verification still needs someone with physical access to that machine to run it (see "Open item" below). Both GTDB snapshots fetched, MD5-checked, and parsed; S3 pipeline built and transferring.
+**Status:** Complete. Both hardware targets verified (RTX 4060 here, M1 Pro by Track 1 — see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed. Both releases' full protein FASTA now uploaded to S3 and verified byte-exact via `s3api head-object`: R207 43,190,024,227 bytes (43.19GB), R232 131,946,537,881 bytes (131.95GB). R232 was explicitly requested 2026-08-10 despite the "Course correction" below (ahead of Week 2 need, not for the validation gate).
+
+## Course correction — full protein-set download was over-scoped
+
+Track 1 flagged (2026-08-09) that warehousing the entire representative-genome protein set for both releases doesn't match what the go/no-go gate actually needs — a stratified sample sized for a few hundred positive labels, not every genome in GTDB. Concretely:
+
+- **R207 (43GB)** — keep pulling. Still needed as the source pool for retrospective validation.
+- **R232 (131.95GB)** — was dropped, then explicitly requested anyway on 2026-08-10 (see Status above) — Track 2's call to pull it ahead of when it's strictly needed, not a reversal of Track 1's scope guidance for the validation gate itself.
+- **`nt_reps` / `genomes` (174GB / 179GB)** — never pulled, staying that way.
+- **Implication for Week 2**: the embedding pipeline should stream sequences through the model and persist only derived artifacts (embeddings, dark/characterized labels, manifest), not warehouse raw FASTA — a different shape than "download everything, then process" which is what the S3 pipeline above was built for. The stratified sampling method itself (N per phylum vs. fixed random, etc.) is Track 1's methodology call, still to be specified.
+- **Checksum fix revisited**: `request_checksum_calculation="when_required"` (above) sidesteps the completion error rather than adding real integrity verification. Track 1 suggested computing per-part checksums or verifying the multipart ETag instead — more correct, not yet done.
 
 ## Objective
 
@@ -21,15 +31,18 @@ Configure the compute environment on both hardware targets (RTX 4060 laptop, M1 
 - **S3 transfer reliability**: the first live run of `s3_stream.py` died 8.5% into the 43GB R207 file on a plain network read timeout, with no way to continue except restarting from byte 0. Rewrote it twice: first to auto-retry the whole file on failure, then properly — to resume from the exact byte offset. Resume works off S3's own multipart-upload state (`list_multipart_uploads` / `list_parts`), not a local state file, so it survives a full process restart, not just an in-process retry; confirmed GTDB's server supports `Range` requests (`Accept-Ranges: bytes`, `206` responses) before relying on it. Verified working live — a killed-and-relaunched transfer picked up at "7 parts already uploaded" instead of starting over.
 - **S3 bucket lifecycle rule**: added `AbortIncompleteMultipartUpload` at 7 days, so a stalled or abandoned upload doesn't sit there accruing storage charges indefinitely; long enough not to abort a transfer that's still legitimately in progress at this connection's speed.
 - **Power settings check**: confirmed sleep-after-idle is already `Never` on both AC and battery (so the machine isn't auto-sleeping mid-transfer); this machine doesn't expose a lid-close-action setting at all (no lid sensor detected), so that wasn't a factor either. The read-timeout crash above was a genuine network blip, not the laptop sleeping.
+- **Survive a full restart, not just a process crash**: registered a logon-triggered scheduled task (`DarkMatterGtdbResume`) that runs `data/.ops/resume_transfer.ps1` 60 seconds after login. The script checks whether the transfer is already running or already finished and only relaunches it when it finds it stopped and incomplete — safe to fire on every login, never duplicates the process. Needed an elevated (admin) PowerShell to register; a non-elevated `schtasks /create` was denied by policy on this machine.
+- **Per-part bounded range requests**: even with resume working, a live run kept dying at a suspiciously consistent ~100-108MB into every attempt — not random flakiness, but a strong sign of a connection-duration limit somewhere on the network path (router/ISP connection tracking, most likely), not a byte-count limit. The old code opened one open-ended `Range: bytes=X-` connection for the *entire remaining file* and chunked it internally, so it was always going to hit that wall. Switched to requesting each ~50MB part as its own bounded `Range: bytes=start-end`, so every part gets a fresh connection. Speed went from ~0.8MB/s-with-constant-drops to bursts of 7MB/s+ immediately after.
+- **Checksum bug that broke completion after a full transfer**: R207 fully downloaded (100%, 43.19GB) and then failed at `complete_multipart_upload` with `InvalidRequest: missing checksum for part 1`. Recent botocore defaults to requiring a CRC32 checksum per part on S3 multipart uploads, but `upload_part()` here never computed/sent one — a bug latent since the very first multipart upload was created, only surfacing once a transfer finally reached 100% for the first time. The already-uploaded parts couldn't be retroactively fixed, so that upload had to be aborted and the 43GB re-transferred from zero. Fix: `Config(request_checksum_calculation="when_required")` on the S3 client, verified with a small throwaway 2-part upload before touching the real transfer again.
+- **R207 completed and verified**: after the checksum fix, re-ran end to end — `s3api head-object` confirms 43,190,024,227 bytes, exact match to source.
+- **Concurrent parts + rate-calc bug**: a real wifi-plan upgrade (200Mbps) didn't move sustained speed at all, which was the tell that the bottleneck wasn't bandwidth — the old code fetched and uploaded one part at a time, fully sequential, leaving the pipe idle half the time. Rewrote to fetch+upload several parts concurrently (`ThreadPoolExecutor`). While diagnosing a nonsensical 171MB/s reading, found the real bug: progress rate was computed as *all bytes ever done* ÷ *this run's elapsed time* — inflated right after every resume (small denominator, large numerator), which explains every earlier "40MB/s burst that decays to 2-3MB/s" report — that pattern was largely the bug talking, not real network behavior. Fixed to measure incrementally (bytes since last report ÷ time since last report).
+- **Root cause found: McAfee**. 4 concurrent workers wedged — multiple workers hit the identical failure at the identical byte offset simultaneously, which pointed at something intercepting *every* open connection at once rather than random network flakiness. `Get-CimInstance -ClassName AntiVirusProduct` showed McAfee installed alongside Windows Defender; McAfee's firewall does SSL/TLS inspection, matching every symptom seen (self-signed cert errors, synchronized connection drops). Dropped to 2 workers as a workaround. User uninstalled McAfee, but `mc-fw-host` service kept running post-uninstall (self-protection resisting `Stop-Service`) — needed McAfee's own MCPR removal tool to fully clear it. Confirmed clean afterward: no AntiVirusProduct entry, no service, no process.
+- **Isolated speed test**: with McAfee confirmed gone, plain `curl`/`aws s3 cp` tests (bypassing all retry/concurrency code) showed ~1.5MB/s GTDB download and ~2.7MB/s S3 upload per single connection — real, external, not a local-software artifact. Raised worker count back to 6 (the earlier 4-worker wedge was McAfee-caused, not a real limit) and cut the read timeout from 90s to 30s so a fully-dead connection gets abandoned 3x faster instead of idling a worker slot. Result: sustained rate went from ~0.3-1.3MB/s (2 workers, McAfee-era) to bursty 1-8MB/s averaging ~4MB/s.
+- **R232 completed and verified**: `s3api head-object` confirms 131,946,537,881 bytes, exact match to source.
 
-## Blocked on Track 1 — M1 Pro not yet verified
+## M1 Pro — verified by Track 1
 
-RTX 4060 is confirmed working (`scripts/smoke_test.py` — ESM-2 loads and embeds; Genos-m hits the VRAM ceiling documented in `docs/reproducibility.md`). `src/darkmatter/device.py` already has an MPS code path (fp16, no quantization — bitsandbytes doesn't support MPS), but it has **not been run on real Apple Silicon hardware**. The M1 Pro is Angshuman's (Track 1) machine, not Track 2's — this isn't something I can finish from here, it needs him to run it on his own laptop:
-
-```bash
-uv sync
-uv run python scripts/smoke_test.py --skip-genos-m   # ESM-2 first; MPS + bitsandbytes can't quantize Genos-m anyway
-```
+Closed. RTX 4060 confirmed working here (`scripts/smoke_test.py` — ESM-2 loads and embeds; Genos-m hits the VRAM ceiling documented in `docs/reproducibility.md`). Angshuman ran the M1 Pro side on his own machine (2026-08-08): ESM-2 verified working on MPS; Genos-m deliberately left untested rather than risk an OOM freeze on his dev machine — see `docs/reproducibility.md` "M1 Pro (Apple Silicon) compute environment" for the full write-up, including why unified memory makes Genos-m's fit less clear-cut than the 4060's hard VRAM wall.
 
 ## Flag — full ESMFold will need cloud GPU or cluster time
 
@@ -69,13 +82,19 @@ The key handed off for this was a root account key (unrestricted account access)
 **Why resume from S3's multipart state instead of a local progress file?**
 A local file can go stale (crash before writing it, disk not synced) and is one more thing to keep in sync with reality. S3 already tracks exactly which parts landed, for as long as the multipart upload is open — asking it directly is strictly more reliable than maintaining a second copy of that fact on disk.
 
+**Why bounded per-part ranges instead of one streaming request?**
+A single connection streaming tens of GB is at the mercy of whatever kills long-lived connections on this network. Bounded ~50MB requests mean each one only needs to survive a short window, and a fresh connection gets negotiated for every part regardless of what happened to the last one.
+
+**Why `request_checksum_calculation="when_required"` instead of just adding checksums?**
+Properly supporting checksums (compute CRC32 per part, pass it to `upload_part`, include it in `complete_multipart_upload`) is the more "correct" fix and adds real integrity verification. Opting out was faster to ship correctly and verify in isolation after already losing a full 43GB transfer to this bug once — worth revisiting if data integrity verification becomes a real requirement later.
+
 ## Outputs
 
 | Output | Description |
 |---|---|
 | `data/raw/gtdb_R232/`, `data/raw/gtdb_R207/` | Fetched, MD5-verified metadata for both snapshots (gitignored, local only). |
 | `data/manifest.json` | Provenance record — source, release, fetch timestamp, file sizes for every fetch. |
-| `s3://darkmatter-gtdb-067620369122/gtdb/` | Same metadata plus (in progress) the full representative-genome protein FASTA for both releases. |
+| `s3://darkmatter-gtdb-067620369122/gtdb/` | Same metadata plus both releases' full representative-genome protein FASTA — R207 (43.19GB) and R232 (131.95GB), both verified byte-exact. |
 | `src/darkmatter/data/gtdb.py`, `s3_stream.py` | Fetcher and streaming-upload code, committed on `week-01-setup-ingestion`. |
 | `config/snapshots.yaml` | Current release corrected to R232; historical/current pairing still open pending Track 1. |
 | `data/processed/gtdb_R232/`, `gtdb_R207/` | Parsed taxonomy table (`taxonomy.csv`) + summary stats (`summary.json`) per release, gitignored, local only. |
