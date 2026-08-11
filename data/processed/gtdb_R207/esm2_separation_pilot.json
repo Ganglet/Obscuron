@@ -1,0 +1,11 @@
+{
+  "n_sequences": 24,
+  "n_families": 6,
+  "within_family_mean_cosine": 0.9722099304199219,
+  "across_family_mean_cosine": 0.9320701360702515,
+  "separation_gap": 0.04013979434967041,
+  "model": "esm2",
+  "esm2_hf_repo": "facebook/esm2_t33_650M_UR50D",
+  "source_faa": "data/processed/gtdb_R207/panel_proteins/GB_GCA_001515205.2_protein.faa",
+  "note": "Pilot scale: one panel genome (GB_GCA_001515205.2), 6 unambiguous single-Pfam-35-hit families, 4 members each. Genos-m not run here (OOMs on this machine's RTX 4060, see docs/reproducibility.md) -- needs to run on Angshuman's M1 Pro for the actual Genos-m/ESM-2 comparison. Full-panel-scale run pending genome panel protein extraction."
+}
