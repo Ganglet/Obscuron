@@ -43,10 +43,19 @@ class _ChunkedS3Reader:
     10s — the same "one open-ended connection is fragile, bounded ranges
     survive a blip" lesson s3_stream.py already learned the hard way for
     uploads. That saga also found this connection's real per-connection
-    cap is only ~1.5-2.7MB/s regardless of chunking, and that concurrent
-    workers are what actually raised aggregate throughput — so chunks are
-    dispatched several at a time (in order, retried individually on
-    failure) rather than one fetch-then-wait per chunk.
+    cap is only ~1.5-2.7MB/s regardless of chunking.
+
+    workers defaults to 2, not the 6 that saga eventually settled on:
+    a live run here hit repeated `SSL: CERTIFICATE_VERIFY_FAILED
+    self-signed certificate in certificate chain` failures across many
+    chunks simultaneously at workers=6 — the exact symptom the s3_stream
+    saga traced to McAfee's SSL-inspection layer wedging concurrent
+    connections. McAfee is confirmed gone (no service/process/AV
+    registration), and a lone direct connection right after the crash got
+    a legitimate Amazon-issued cert with no interception, so the trigger
+    now is unidentified — but it reproduces specifically under
+    concurrency, so drop back to the same low-concurrency workaround
+    until (if) the real cause turns up.
     """
 
     def __init__(
@@ -56,7 +65,7 @@ class _ChunkedS3Reader:
         key: str,
         chunk_bytes: int = 16 * 1024 * 1024,
         max_retries: int = 10,
-        workers: int = 6,
+        workers: int = 2,
     ):
         self._s3 = s3
         self._bucket = bucket
