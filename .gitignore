@@ -13,9 +13,8 @@ Paper/
 /data/processed/*
 !/data/processed/*/
 /data/processed/*/*
-!/data/processed/*/summary.json
+!/data/processed/*/*.json
 !/data/processed/*/genome_panel.csv
-!/data/processed/*/genome_panel_summary.json
 
 # External tools cloned/built locally, not vendored (e.g. Foldseek binaries) — see README/ACKNOWLEDGEMENTS
 tools/
