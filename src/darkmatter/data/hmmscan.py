@@ -23,6 +23,18 @@ def load_protein_sequences(faa_path: Path, alphabet: Alphabet) -> DigitalSequenc
         return DigitalSequenceBlock(alphabet, list(sf))
 
 
+def load_protein_sequences_multi(faa_paths: list[Path], alphabet: Alphabet) -> DigitalSequenceBlock:
+    """Combine many genomes' proteins into one block so a Pfam library only
+    needs to be scanned once across the whole panel, not once per genome.
+    Protein IDs are contig-accession-based and unique per genome's own
+    assembly, so no collision risk combining across genomes."""
+    seqs = []
+    for faa_path in faa_paths:
+        with SequenceFile(faa_path, digital=True, alphabet=alphabet) as sf:
+            seqs.extend(sf)
+    return DigitalSequenceBlock(alphabet, seqs)
+
+
 def scan_against_pfam(
     sequences: DigitalSequenceBlock, pfam_hmm_path: Path, cpus: int = 0
 ) -> dict[str, list[str]]:
