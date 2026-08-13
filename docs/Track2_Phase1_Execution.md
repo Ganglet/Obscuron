@@ -1,8 +1,8 @@
 # GTDB Snapshot Ingestion & S3 Storage Pipeline
 
-**Phase:** Week 1 — Environment Setup & Snapshot Boundary Definition
+**Phase:** Weeks 1-3 — Environment Setup, Embedding Pipeline & Snapshot Differencing
 **Owner:** Track 2 (Rayyan)
-**Status:** Complete. Both hardware targets verified (RTX 4060 here, M1 Pro by Track 1 — see `docs/reproducibility.md`). Both GTDB snapshots fetched, MD5-checked, and parsed. Both releases' full protein FASTA now uploaded to S3 and verified byte-exact via `s3api head-object`: R207 43,190,024,227 bytes (43.19GB), R232 131,946,537,881 bytes (131.95GB). R232 was explicitly requested 2026-08-10 despite the "Course correction" below (ahead of Week 2 need, not for the validation gate).
+**Status:** Week 1 complete (below). Week 2 complete: full 502-genome panel built, extracted, and differenced against Pfam — go/no-go floor cleared by 41-83x. Week 3 (Track 2's half): differencing pipeline finalized, positive-label count delivered, experiment-log infrastructure built, Stage 3 embedding sample generated. See "Week 2" and "Week 3" sections below for full detail; Week 1 narrative follows unchanged.
 
 ## Course correction — full protein-set download was over-scoped
 
@@ -98,3 +98,71 @@ Properly supporting checksums (compute CRC32 per part, pass it to `upload_part`,
 | `src/darkmatter/data/gtdb.py`, `s3_stream.py` | Fetcher and streaming-upload code, committed on `week-01-setup-ingestion`. |
 | `config/snapshots.yaml` | Current release corrected to R232; historical/current pairing still open pending Track 1. |
 | `data/processed/gtdb_R232/`, `gtdb_R207/` | Parsed taxonomy table (`taxonomy.csv`) + summary stats (`summary.json`) per release, gitignored, local only. |
+
+---
+
+## Week 2 — Embedding Pipeline Integration & Snapshot Differencing
+
+**Status:** Complete. Branch `week-02-embedding-pipeline`, merged to `main` via PR #5.
+
+### What Was Done
+
+- **`src/darkmatter/data/panel.py`**: phylum-stratified genome panel sampler, per Track 1's P1-D6 spec (proportional-with-floor-cap: `n = clip(round(f·N_phylum), floor=2, cap=30)`, binary-searched `f` so the panel totals ~500). Needed the `gtdb_representative` flag from the metadata file — GTDB's taxonomy file lists every genome in a release, not just species reps, so taxonomy.csv alone wasn't enough. Ran against R207: **502 genomes across all 189 phyla**, none excluded — the whole point of the floor.
+- **`.gitignore` fix**: `/data/` was blanket-excluding the directory as a unit, which meant `data/manifest.json` and every derived summary/panel file were silently uncommittable — contradicting Track 1's own P1-D6 note calling the labeled manifest "the committed artifact." Rewrote as `/data/*` plus explicit un-ignores (`*.json`, `*.csv` except `taxonomy.csv`) so small derived artifacts commit while raw/bulk data stays out.
+- **`src/darkmatter/data/panel_proteins.py`**: extracts just the 502 panel genomes' proteins from the combined S3-hosted rep-protein tarball (40GB for R207), without downloading the other ~39.5GB. Confirmed tar member names (`{RS_|GB_}{accession}_protein.faa`) match `genome_panel.csv`'s accession column exactly, so no NCBI assembly_summary lookup was needed. Went through two real failures before this worked reliably:
+  - A continuously-open `StreamingBody` read timed out every ~10-100KB on this connection. Rewrote to fetch bounded ~16MB byte-range chunks instead — same "bounded ranges survive a blip" lesson `s3_stream.py` already learned for uploads.
+  - At 6 concurrent workers, hit the exact `SSL: CERTIFICATE_VERIFY_FAILED self-signed certificate in certificate chain` signature Track 1 traced to McAfee during the Week 1 upload saga — except McAfee is confirmed fully gone (no service/process/AV registration), so the trigger is unidentified but still concurrency-shaped. Dropped to 2 workers as the same workaround, which held.
+  - Extraction is idempotent (skips accessions already on disk), which is what let it survive three separate mid-run interruptions (see Week 3) without losing completed work.
+- **`src/darkmatter/data/download.py` bug fix**: the shared HTTP downloader never verified bytes-written against `Content-Length` — a mid-stream connection drop could end the response generator early with no exception raised, silently producing a truncated file. Found the hard way when a 293MB-expected Pfam HMM fetch landed at 230MB with `download()` reporting success. Now retries the whole download (bounded file, not worth resuming byte-by-byte) whenever the size doesn't match.
+- **`src/darkmatter/data/hmmscan.py`**: Pfam GA-threshold scanner via `pyhmmer` (a Python/Cython HMMER3 binding with a prebuilt Windows wheel — sidesteps HMMER having no native Windows build and this machine having no WSL distro or running Docker). Confirmed GA cutoffs are readable per-HMM and usable via `bit_cutoffs="gathering"`, matching P1-D3's "standard hmmscan with GA cutoffs" exactly. First version re-opened the ~300MB HMM file per genome (9 min/genome — ~77 hours for the full panel); rewrote to batch every genome's proteins into one combined sequence block and scan each Pfam release exactly once.
+- **`src/darkmatter/data/pfam_diff.py`**: Pfam-37 net-new-family proxy standing in for InterPro-latest. P1-D3 specifies InterPro-latest as the "characterised by T1" signal, but full InterProScan is a much heavier lift (~6.6GB multi-database Docker pipeline, ~10 bundled search tools, not just HMMER) than anything else built so far — deliberately deferred as a proxy rather than built outright. Fetched Pfam-37.0's HMM library and confirmed family counts exactly match Track 1's own P1-D5 numbers (35.0: 19,632; 37.0: 21,979; net-new: 2,383 vs. his release-notes-derived 2,347 — close enough to validate both methods). A protein counts as characterised-T1-proxy if it hits a Pfam-37 family that's new since 35.0.
+- **`scripts/label_panel_proteins.py`**: combines the above into the actual differencing procedure — dark-at-T0 (no Pfam-35 GA hit) ∧ characterised-T1-proxy = positive. Ran across the full panel: **1,341,100 proteins; 297,798 dark-at-T0 (22.21%); 51,287 characterised-T1-proxy (3.82%); 4,138 positive-proxy (0.309%)** — 41-83x the blueprint's 50-100 go/no-go floor (D6).
+- **ESM-2 bumped to `esm2_t33_650M`**, per Track 1's design note (`t30_150M` was the smoke-test default only). Verified loading and embedding correctly (hidden dim 1280).
+- **`src/darkmatter/separation.py` + `scripts/compare_embeddings_pilot.py`**: the blueprint §8 "run the Genos-m/ESM-2 comparison on a small labeled subset" deliverable. Builds a labeled subset from real, unambiguous (single-Pfam-hit) proteins rather than fabricated reference sequences, embeds with each model, and reports within-family vs. across-family cosine similarity as a separation signal. Pilot (1 genome, 6 families, 24 sequences): gap 0.040. Genos-m not run here — OOMs on this machine's RTX 4060 even quantized (see `docs/reproducibility.md`); needs Track 1's M1 Pro.
+- **`scripts/compare_embeddings_full.py`**: same check at real scale — 30 phylum-diverse genomes, 20 Pfam families, 100 sequences. Gap 0.036, consistent with the pilot.
+
+### Why (Key Decisions)
+
+**Why a Pfam-37 proxy instead of building full InterProScan?**
+InterPro isn't one search — it's ~10+ member databases, each with its own bundled search tool, not just HMMER. Getting that running via Docker on Windows and scanning the full panel through it is realistically hours of setup, not the same league as fetching one HMM file. Pfam is itself the largest InterPro member database, and Track 1's own P1-D5 proxy math already leaned on Pfam net-new-family counts — reusing that mechanism was fast (minutes) and let the pilot start immediately, with the explicit caveat that it's narrower than true InterPro-latest (misses characterisation via non-Pfam member databases) reported alongside every result.
+
+**Why bounded S3 ranges and low concurrency for the protein extractor, again?**
+Same network, same lesson already paid for once in Week 1: a single long-lived connection is fragile on this connection, and this machine's real bottleneck (~1.3-2.7MB/s, confirmed by direct testing) doesn't improve with more concurrent workers — it just reintroduces the certificate-interception symptom. Chunked-and-throttled beats clever every time here.
+
+### Outputs
+
+| Output | Description |
+|---|---|
+| `data/processed/gtdb_R207/genome_panel.csv` | 502-genome phylum-stratified panel, committed. |
+| `data/processed/gtdb_R207/panel_proteins/` | Extracted protein FASTA for all 502 panel genomes, gitignored, local only. |
+| `data/processed/gtdb_R207/panel_protein_labels.csv` | Per-protein dark-at-T0 / characterised-T1-proxy / positive-proxy labels, 1,341,100 rows, committed. |
+| `data/processed/gtdb_R207/esm2_separation_pilot.json`, `esm2_separation_full.json` | Embedding-separation results at both scales, committed. |
+| `src/darkmatter/data/{panel,panel_proteins,hmmscan,pfam_diff}.py`, `src/darkmatter/separation.py` | Pipeline code, committed on `week-02-embedding-pipeline` → `main`. |
+
+---
+
+## Week 3 — Go/No-Go Decision & Phase 2 Prep
+
+**Status:** Track 2's items complete. Branch `week-03-snapshot-differencing`. The formal go/no-go sign-off and Phase 2 metric lock-in are Track 1's half — see "Open item" below.
+
+### What Was Done
+
+- **Finalized the snapshot-differencing pipeline and delivered the final positive-label count**: 4,138 positive-proxy sequences across the full 502-genome panel (see Week 2) — this is the number the go/no-go gate (D6) needs, already committed and reported.
+- **Resumable batching for `label_panel_proteins.py`**: the full-panel labeling run was killed mid-flight by unrelated environment/session restarts three separate times, each time losing the entire multi-hour run with nothing written (output only happened at the very end). Rewrote to process genomes in batches of 25, appending to the CSV after each batch and skipping already-labeled genomes on restart — a restart now costs at most one batch (~15-65 min observed), not the whole run. This is what actually got the full panel labeled.
+- **`src/darkmatter/experiment_log.py` + `scripts/log_experiment.py`**: the experiment-tracking tool `docs/reproducibility.md` already described but never existed. Captures the git commit hash automatically, appends structured entries (config/result/next step) to `docs/experiment_log.md`. Wired directly into `label_panel_proteins.py`, `compare_embeddings_full.py`, and `embed_panel_sample.py` so a completed run logs itself — not a separate step someone has to remember.
+- **`src/darkmatter/embedding_sample.py` + `scripts/build_embedding_sample.py`**: builds the Stage 3 embedding budget from P1-D6 — all positives (never subsampled), a capped dark-negative query universe, and a phylum-stratified characterised-at-T0 reference. Sampled **64,000 sequences** (4,138 positive / 30,000 dark-negative / 29,862 characterised-at-T0) from the real labeled panel.
+- **`scripts/embed_panel_sample.py`**: embedded the full 64,000-sequence sample with ESM-2 — **3,592s, output shape (64000, 1280)**. This is genuine "Layer 1 implementation start" work that doesn't depend on which novelty-scoring algorithm Track 1 picks (EVT calibration vs. density-based): any scorer needs embeddings as raw input, so this is ready the moment that decision lands.
+
+### Open item — not Track 2's to close
+
+Formally, `docs/Track1_phase1_benchmark_scope.md` on `main` still marks the go/no-go criterion "pending — BLOCKS PHASE 2." That's because Track 1's own resolving decisions (P1-D2 through P1-D7 — snapshot boundary, operational dark/characterised definition, the go/no-go proxy call) live only on `origin/week-01-benchmarking`, a branch that was pushed 2026-08-10 and has not been merged. The actual data now substantively resolves the question (4,138 clears the 50-100 floor by a wide margin, on a proxy signal that undercounts if anything), but the formal sign-off and the Phase 2 evaluation-metric lock-in (Precision@K, AUROC, calibration — required before implementation begins, per blueprint D5) are both still open on Track 1's side.
+
+### Outputs
+
+| Output | Description |
+|---|---|
+| `docs/experiment_log.md` | Auto-populated run history — commit, config, result, next step per entry. |
+| `data/processed/gtdb_R207/embedding_sample.csv` | Stage 3 sample manifest (protein ID, genome, category), committed. |
+| `data/processed/gtdb_R207/esm2_panel_embeddings.npy` | 64,000 × 1,280 embedding matrix, gitignored (large binary), local only. |
+| `data/processed/gtdb_R207/esm2_panel_embeddings_manifest.csv` | Row-to-protein mapping for the embedding matrix, committed. |
+| `src/darkmatter/experiment_log.py`, `embedding_sample.py` | Tooling, committed on `week-03-snapshot-differencing`. |
