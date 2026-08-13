@@ -17,22 +17,58 @@ dataset"; this file is where that standard lives.
   message explaining why the boundary moved (e.g. "widened interval,
   positive-label count was N=32, below the 50 minimum").
 
-## Open decision: snapshot boundary
+## Snapshot boundary — RESOLVED (2026-08-09, Track 1)
 
-`config/snapshots.yaml` currently defaults to GTDB R207 (Apr 2022) →
-R226 (Jan 2026) and Pfam 35.0 (Nov 2021) → 37.0 (Jun 2024). This is a
-placeholder chosen for a reasonable (~4 year) gap, **not yet a Track 1
-decision**. Before Phase 1's go/no-go gate, confirm:
+Confirmed by **P1-D2 / P1-D3 / P1-D5** (`problems_and_decisions.md`).
+**T₀ = GTDB R207 (Apr 2022) + Pfam 35.0 (Nov 2021); T₁ = GTDB R232 (Apr
+2026) + InterPro-latest.** Answering the three questions this section
+originally raised:
 
-1. Whether GTDB taxonomy differencing, Pfam family differencing, or both
-   are the primary signal for "characterized since the historical
-   snapshot."
-2. Whether the Pfam→InterPro transition (Pfam has had no standalone
-   release since 37.0/Jun 2024) means InterPro release notes are now a
-   better source of "family added" events than Pfam directly.
-3. Whether the projected positive-label count with this pair clears the
-   50–100 minimum (blueprint §7) — estimate this before building the full
-   differencing pipeline on top of it.
+1. **Signal for "characterised since"** = Pfam/InterPro family membership,
+   *not* GTDB taxonomy (GTDB supplies the sequences and a universe-growth
+   number, nothing about a gene gaining function). Dark-at-T₀ = no Pfam-35
+   hit at the GA threshold; characterised-by-T₁ = now hits a family new
+   since T₀.
+2. **Pfam→InterPro**: yes — Pfam froze at 37.0 (Jun 2024), so the *current*
+   signal is **InterPro-latest**. Pfam-35 stays the historical
+   dark-definition, and it aligns with ESM-2's ~2021 training cutoff,
+   minimising protein-arm embedding leakage (P1-D2).
+3. **Positive-label count**: proxy = +2,347 net new Pfam families 35→37 →
+   ~10⁴–10⁵ positives ≫ the 50–100 floor → **GO** (P1-D5); definitive
+   count = Week-2 hmmscan.
+
+## Data storage & subsetting standard (P1-D4)
+
+Raw reproducible public data (GTDB FASTAs) is **never warehoused** — it is
+freely, permanently hosted, so the pipeline streams needed sequences from
+the public mirror and persists only *derived* artifacts (embeddings,
+dark/characterised labels, and a manifest recording source URLs +
+checksums). The benchmark is a **principled stratified taxonomic subset** —
+required for local compute (the full R207 rep set is ~10⁸ proteins) and
+documented to avoid taxonomic bias. R232 proteins (application-time) and
+`nt_reps`/`genomes` are deferred; any S3 staging carries a 30–60 day
+lifecycle-expiry. This keeps the persistent footprint GB-scale and the S3
+bill near zero.
+
+## Embedding-model training cutoffs & per-arm leakage (P1-D7)
+
+Load-bearing for the retrospective claim — verified, not assumed:
+
+- **ESM-2** trained on **UniRef50 2021_04** (~late 2021). Pfam-35 was built
+  on UniProt 2021_03 and T₀ = R207 (Apr 2022), so ESM-2 predates every
+  T₀→T₁ characterisation event → **leakage-clean**. ESM-2 carries the
+  retrospective headline.
+- **Genos-m** pretrained on **GTDB R220 (released 24 Apr 2024)** + human-
+  microbiome MAGs/UHGV phages (model card). R220 is *inside* the T₀→T₁
+  window and is the same database the benchmark draws from → Genos-m has
+  seen the benchmark sequences and 2022→Apr-2024 characterisation events
+  leaked. It is self-supervised (raw DNA, no family labels) so the leak is
+  weak and conservative in direction (seen sequences → lower novelty →
+  harder to flag).
+- **Handling:** Genos-m positives are reported **restricted to post-R220
+  (Apr 2024→T₁)** for a clean number, and over the full 2022→T₁ window to
+  quantify the contamination. Genos-m remains the genome-FM comparison,
+  reported leakage-controlled.
 
 ## GTDB snapshot fetch (2026-08-08)
 
@@ -118,19 +154,30 @@ memory**, macOS) — the hardware Track 2 could not reach from the 4060.
   MISSING) is benign — expected when an ESM-2 masked-LM checkpoint is loaded
   into `AutoModel`; the backend mean-pools `last_hidden_state` and never
   touches the pooler.
-- **Genos-m on M1 Pro — not yet run definitively; a different regime from the
-  4060**: on MPS `device.py` loads fp16, no quantization (~9.4GB weights).
-  Unlike the 4060's hard 8GB VRAM wall, Apple unified memory has no separate
-  GPU-memory ceiling — MPS can address a large fraction of the 16GB — so a fit
-  is *not* foreclosed the way it is on the 4060. But 9.4GB weights +
-  activations + macOS against 16GB physical is tight and may swap-thrash or be
-  OOM-killed (the same ceiling that killed Track 2's CPU attempt). Left as a
-  deliberate, supervised test rather than run inline, to avoid a ~9GB download
-  and a possible freeze on the active development machine.
+- **Genos-m on M1 Pro — VERIFIED WORKING on MPS (2026-08-09), overturning the
+  4060 result**: with the machine quiet (~11GB / 68% free), `smoke_test.py
+  --skip-esm2` loaded Genos-m on `mps` (fp16, no quantization, hidden dim
+  1024) and embedded toy DNA → `(3, 1024)` in 94.4s, with memory well within
+  budget throughout (73% free afterward, swap ~4.6GB, no thrash). This is
+  exactly the regime the 4060 could not reach: Apple unified memory has no hard
+  VRAM wall, so the ~9.4GB fp16 footprint that OOM'd the 8GB 4060 — and that
+  bitsandbytes could not shrink, since it cannot quantize Mixtral's
+  batched-expert `Parameter` tensors — simply fits in unified memory. The
+  transformers LOAD REPORT (`lm_head.weight` UNEXPECTED) is benign: base
+  `MixtralModel` without the LM head; the backend mean-pools
+  `last_hidden_state`. Weights are ~18GB on disk (fp32, 4 safetensors shards),
+  cast to fp16 on load.
+  - *Caveats*: (i) this is 3 short toy sequences — sustained throughput on real
+    GTDB nucleotide data (max 8192 single-nt tokens ≈ 8kb; longer genes need
+    chunking) and batch scale are untested; (ii) MPS inference on a 4.7B MoE is
+    slow, so large-scale embedding may still prefer the cloud/cluster path
+    (D9). But the M1 Pro is a viable Genos-m *development* machine, not
+    ESM-2-only.
 
-**Net for Track 1 development**: ESM-2 on MPS is the confirmed working backend
-on this machine — consistent with the 4060 and with blueprint §7/D3. Genos-m
-remains the cloud/cluster question (blueprint §9, D9).
+**Net for Track 1 development**: both backends run on this M1 Pro — ESM-2
+(fast) and Genos-m (fp16 on MPS, verified). The 16GB M1 Pro clears a bar the
+8GB 4060 could not, thanks to unified memory. Large-scale Genos-m throughput
+and any full ESMFold remain the cloud/cluster question (blueprint §9, D9).
 
 ## Environment provenance
 

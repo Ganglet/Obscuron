@@ -25,34 +25,25 @@ Embed → model the boundary of "known" → assign a calibrated novelty score (E
 
 ---
 
-## Current implementation
+## Package layout and setup
 
-Phase 1 code — embedding backends, GTDB/Pfam ingestion, snapshot fetch/differencing — lives in `src/darkmatter/` (`uv`/`pyproject.toml`) rather than the `obscuron/` package below. The package layout described in this README is the target structure; `src/darkmatter/` is where Track 2's working, tested Phase 1 pipeline actually runs today. Reconciling the two (rename vs. re-point) is an open item between tracks, not yet decided.
+Phase 1 code — embedding backends, GTDB/Pfam ingestion, snapshot fetch/differencing — lives in the `darkmatter` package under `src/darkmatter/`, built with **`uv`** (`pyproject.toml` + committed `uv.lock`). This is the canonical package; the earlier `obscuron/` conda scaffold has been removed in its favour.
 
 ```bash
 uv sync
 
-# verify both embedding backends load on this machine
-uv run python scripts/smoke_test.py
+# verify the embedding backends load on this machine
+uv run python scripts/smoke_test.py                  # ESM-2 + Genos-m
+uv run python scripts/smoke_test.py --skip-genos-m   # ESM-2 only (fast; the M1 Pro default)
 
 # fetch a reference-database release (metadata-only, not full sequence data)
 uv run python scripts/fetch_snapshot.py --source gtdb --release R232 --metadata-only
 
 # embed a FASTA file
-uv run python scripts/embed.py --model genos-m --fasta sequences.fasta --out out/genos_m.npy
+uv run python scripts/embed.py --model esm2 --fasta sequences.fasta --out out/esm2.npy
 ```
 
-See `docs/reproducibility.md` for hardware findings (Genos-m VRAM constraints) and dataset provenance notes.
-
----
-
-## Setup
-
-```bash
-conda env create -f environment.yml
-conda activate obscuron
-# or:  pip install -r requirements.txt
-```
+See `docs/reproducibility.md` for hardware findings (Genos-m memory constraints on M1 Pro / RTX 4060) and dataset provenance.
 
 ---
 
@@ -66,23 +57,22 @@ Reference-database snapshots, sequences, and cached embeddings are **not stored 
 
 ```
 Obscuron/
-├── obscuron/          # target source package (not yet populated — see "Current implementation")
-├── src/darkmatter/    # actual Phase 1 implementation: device policy, embeddings, data fetchers
-├── scripts/           # data build, embedding extraction, evaluation drivers
-├── configs/           # version-controlled run configs (fixed seeds)
-├── config/            # snapshot boundaries, model/quantization policy (used by src/darkmatter)
-├── data/              # gitignored — snapshots, sequences, embeddings (built locally)
+├── src/darkmatter/    # canonical package: device policy, embedding backends, data pipeline
+├── scripts/           # smoke test, snapshot fetch, embedding, S3 streaming
+├── config/            # snapshot boundaries (snapshots.yaml), model/quantization policy (models.yaml)
+├── tests/             # pytest (device, embeddings smoke)
+├── data/              # gitignored — snapshots, sequences, embeddings (built locally / on S3)
 ├── figures/           # gitignored — output figures from evaluation
 ├── Paper/             # gitignored — reference PDFs (cited in ACKNOWLEDGEMENTS)
-├── Documentation/
+├── Documentation/     # Track 1 methodology docs + decision log
 │   ├── problems_and_decisions.md              # numbered decision log (D…, P#-D…)
 │   └── 01_track1_phase1_benchmark_scope.md    # Phase 1 Track 1 working record
-├── docs/              # reproducibility standards, experiment log (Track 2)
+├── docs/              # reproducibility standards, experiment log, Track 2 writeups
 ├── README.md
 ├── LICENSE
 ├── ACKNOWLEDGEMENTS.md
-├── environment.yml
-└── requirements.txt
+├── pyproject.toml
+└── uv.lock
 ```
 
 ---
