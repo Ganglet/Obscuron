@@ -24,6 +24,7 @@ from pyhmmer.easel import Alphabet
 
 from darkmatter.data.hmmscan import load_protein_sequences_multi, scan_against_pfam
 from darkmatter.embeddings import load_embedder
+from darkmatter.experiment_log import log_experiment
 from darkmatter.separation import select_labeled_subset, separation_score
 
 PROC_ROOT = Path(__file__).resolve().parents[1] / "data" / "processed"
@@ -100,6 +101,18 @@ def main() -> None:
     out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "families"}, indent=2))
     print(f"wrote {out_path}")
+
+    log_experiment(
+        title=f"{args.model} embedding separation ({len(faa_files)} genomes, {len(families)} families)",
+        config=f"{args.model}, mean-pooled, unambiguous single-Pfam-35-hit proteins, {args.per_family}/family, seed={args.seed}",
+        result=(
+            f"{result['n_sequences']} sequences, {result['n_families']} families: "
+            f"within-family cosine {result['within_family_mean_cosine']:.3f} vs "
+            f"across-family {result['across_family_mean_cosine']:.3f}, "
+            f"gap {result['separation_gap']:.3f}"
+        ),
+        next_step="compare against the other model's separation once both are available",
+    )
 
 
 if __name__ == "__main__":
