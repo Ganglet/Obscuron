@@ -144,5 +144,10 @@ remains the cloud/cluster question (blueprint §9, D9).
 ## Experiment tracking
 
 See `docs/experiment_log.md` — one entry per meaningful run (config used,
-git commit hash, result summary). Populated starting Phase 2 once the
-novelty-scoring model exists to generate results worth logging.
+git commit hash, result summary, next step). `src/darkmatter/experiment_log.py`
+writes entries automatically; `label_panel_proteins.py` and
+`compare_embeddings_full.py` call it at the end of every run, so a
+completed run is never left undocumented waiting on someone to remember
+a separate logging step. Started in Phase 1 once the differencing
+pipeline had a real result worth recording, not held back for Phase 2 —
+`scripts/log_experiment.py` is still there for logging anything ad hoc.

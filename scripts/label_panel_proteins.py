@@ -32,6 +32,7 @@ from pyhmmer.easel import Alphabet
 
 from darkmatter.data.hmmscan import load_protein_sequences_multi, scan_against_pfam
 from darkmatter.data.pfam_diff import label_protein, new_families_since
+from darkmatter.experiment_log import log_experiment
 
 PROC_ROOT = Path(__file__).resolve().parents[1] / "data" / "processed"
 RAW_ROOT = Path(__file__).resolve().parents[1] / "data" / "raw"
@@ -135,6 +136,17 @@ def main() -> None:
     print(f"dark-at-T0: {n_dark} ({100*n_dark/n_total:.2f}%)")
     print(f"characterised-T1-proxy: {n_char} ({100*n_char/n_total:.2f}%)")
     print(f"positive-proxy (dark-at-T0 AND characterised-T1-proxy): {n_pos} ({100*n_pos/n_total:.3f}%)")
+
+    log_experiment(
+        title=f"snapshot differencing ({args.release} panel, {len(faa_files)} genomes)",
+        config=f"pfam-35 GA dark-at-T0 / pfam-37 net-new-family characterised-T1-proxy, batch-size={args.batch_size}",
+        result=(
+            f"{n_total} proteins; dark-at-T0 {n_dark} ({100*n_dark/n_total:.2f}%); "
+            f"characterised-T1-proxy {n_char} ({100*n_char/n_total:.2f}%); "
+            f"positive-proxy {n_pos} ({100*n_pos/n_total:.3f}%)"
+        ),
+        next_step="report to Track 1 for go/no-go sign-off" if n_pos >= 50 else "below the 50-100 floor, widen interval or broaden references per D6",
+    )
 
 
 if __name__ == "__main__":
