@@ -23,6 +23,7 @@ import pandas as pd
 from Bio import SeqIO
 
 from darkmatter.embeddings import load_embedder
+from darkmatter.experiment_log import log_experiment
 
 PROC_ROOT = Path(__file__).resolve().parents[1] / "data" / "processed"
 
@@ -72,6 +73,14 @@ def main() -> None:
 
     print(f"wrote {npy_path}")
     print(f"wrote {manifest_path}")
+
+    counts = sample["category"].value_counts().to_dict()
+    log_experiment(
+        title=f"stage 3 embedding sample ({args.model}, {args.release} panel)",
+        config=f"{args.model}, {len(sample)} sequences: {counts}",
+        result=f"embedded in {elapsed:.0f}s, shape {vectors.shape}",
+        next_step="feed into the Layer 1 novelty scorer once Track 1 fixes EVT vs density-based",
+    )
 
 
 if __name__ == "__main__":
