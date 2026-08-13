@@ -20,12 +20,14 @@ genos_m:
   max_tokens: 8192                # cap for embedding calls; model supports far more
 
 esm2:
-  # Default variant chosen for fast iteration / smoke testing. Larger variants
-  # (t33_650M, t36_3B) fit comfortably on the 4060 in fp16 and should be used
-  # for the actual Genos-m/ESM-2 comparison once the pipeline is validated.
-  hf_repo: "facebook/esm2_t30_150M_UR50D"
-  vram_bf16_gb: 0.6
-  quantize_below_vram_gb: 0.0   # never needed at this size
+  # Bumped from esm2_t30_150M (smoke-test default) to t33_650M per Track 1's
+  # design note in Track1_phase1_benchmark_scope.md section 2: the smaller
+  # variant was for fast iteration only, t33_650M+ is what the actual
+  # Genos-m/ESM-2 comparison should run — now that the pipeline is validated
+  # on both hardware targets (see docs/reproducibility.md).
+  hf_repo: "facebook/esm2_t33_650M_UR50D"
+  vram_bf16_gb: 2.6
+  quantize_below_vram_gb: 0.0   # comfortably fits 8GB unquantized
   max_tokens: 1024
 
 device_policy:
