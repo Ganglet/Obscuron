@@ -23,3 +23,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: esm2_t33_650M, mean-pooled; unambiguous single-Pfam-35-hit proteins, 5/family; pilot=1 genome/6 families/24 seqs, full=30 phylum-diverse genomes/20 families/100 seqs
 - Result: pilot: within-family cosine 0.972 vs across-family 0.932, gap 0.040. full: within 0.963 vs across 0.928, gap 0.036 -- consistent, modest but real separation
 - Next: Genos-m side still pending Angshuman on his M1 Pro; re-run this comparison once his result lands to check separation is comparable across models
+
+## 2026-08-13 — stage 3 embedding sample (esm2, R207 panel)
+- Commit: 2ea3410
+- Config: esm2, 64000 sequences: {'dark_negative': 30000, 'characterised_at_t0': 29862, 'positive': 4138}
+- Result: embedded in 3592s, shape (64000, 1280)
+- Next: feed into the Layer 1 novelty scorer once Track 1 fixes EVT vs density-based
