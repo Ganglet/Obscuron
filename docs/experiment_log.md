@@ -29,3 +29,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: esm2, 64000 sequences: {'dark_negative': 30000, 'characterised_at_t0': 29862, 'positive': 4138}
 - Result: embedded in 3592s, shape (64000, 1280)
 - Next: feed into the Layer 1 novelty scorer once Track 1 fixes EVT vs density-based
+
+## 2026-08-15 — full-panel nucleotide extraction (genos-m input)
+- Commit: 9a3e937
+- Config: R207 panel (502 genomes), gtdb_proteins_nt_reps streamed directly from GTDB public mirror (61GB archive), no AWS credentials needed
+- Result: 502/502 genomes extracted, 1.4GB total, gene counts verified matching the protein version exactly (e.g. 219/219) -- same genes, DNA modality
+- Next: Angshuman can now run Genos-m against real, correctly-matched panel data on his M1 Pro
