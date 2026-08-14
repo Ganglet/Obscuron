@@ -127,14 +127,19 @@ class _ChunkedS3Reader:
         return data
 
 
-def _member_accession(member_name: str) -> str | None:
+def _member_accession(member_name: str, suffix: str) -> str | None:
     fname = member_name.rsplit("/", 1)[-1]
-    if not fname.endswith("_protein.faa"):
+    if not fname.endswith(suffix):
         return None
-    return fname[: -len("_protein.faa")]
+    return fname[: -len(suffix)]
 
 
-def extract_panel_proteins_stream(stream: BinaryIO, accessions: set[str], out_dir: Path) -> list[Path]:
+def extract_panel_proteins_stream(
+    stream: BinaryIO, accessions: set[str], out_dir: Path, suffix: str = "_protein.faa"
+) -> list[Path]:
+    """suffix covers both the tar member naming and the output filename --
+    GTDB's nucleotide archive uses the identical layout, just
+    `_protein.fna` instead of `_protein.faa` (see panel_nucleotides.py)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     remaining = set(accessions)
     written: list[Path] = []
@@ -145,14 +150,14 @@ def extract_panel_proteins_stream(stream: BinaryIO, accessions: set[str], out_di
             members_seen += 1
             if not member.isfile():
                 continue
-            accession = _member_accession(member.name)
+            accession = _member_accession(member.name, suffix)
             if accession is None or accession not in remaining:
                 continue
 
             handle = tar.extractfile(member)
             if handle is None:
                 continue
-            dest = out_dir / f"{accession}_protein.faa"
+            dest = out_dir / f"{accession}{suffix}"
             dest.write_bytes(handle.read())
             written.append(dest)
             remaining.discard(accession)
