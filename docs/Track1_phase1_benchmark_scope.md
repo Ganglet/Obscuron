@@ -79,14 +79,22 @@ To specify:
 
 ## 4. Systematic literature search
 
-**Status:** pending
+**Status:** DONE (first pass) — see P1-D11. Novelty claim narrowed and now defensible; re-run before submission.
 
-Confirm the novelty positioning (D4) is real, not assumed. Search PubMed, bioRxiv, arXiv, Semantic Scholar for the intersection of {open-set recognition, novelty/anomaly detection, extreme-value calibration} × {genomic/protein foundation-model embeddings, metagenomics}.
+Searched web + arXiv + PubMed + bioRxiv for {open-set recognition, novelty/anomaly detection, EVT calibration} × {protein/genomic FM embeddings, metagenomics, microbial dark matter}.
 
-- [ ] Run the search; record queries + dated hits.
-- [ ] Confirm no prior work applies a formal open-set / EVT-calibrated novelty score to a microbial *genomic* foundation model.
-- [ ] Note the closest prior art and how Obscuron differs (feeds Related Work).
-- [ ] Re-run immediately before manuscript submission (Phase 4) to catch work published during the project.
+**Closest prior art**
+- **HiFi-NN** (iScience 2025) — "annotating the microbial dark matter," ESM-2 650M embeddings. **Annotates** (EC numbers, closed-set); calibration is heuristic kNN-softmax + hard 0.38 cutoff (not conformal/EVT); no open-set rejection; temporal split is a minor benchmark. Its ESM-2 650M choice validates our protein arm.
+- **DeepVirus / viral-dark-matter hierarchical DL** (bioRxiv 2025) — open-set + protein FM + genome context + novel-group detection, but **viral lineage** (not microbial function) and hypothesis-testing (not EVT).
+- Neighbourhood: protein-embedding anomaly detection (NAR GB 2024); EVM/OpenMax (EVT open-set, general ML); FUGAsseM/CAFA (temporal-holdout function prediction); protein-embedding uncertainty (Nat Methods 2026).
+
+**Refined novelty claim** (replaces the blueprint's over-broad phrasing): *first to cast microbial functional dark-matter prioritisation as formally-calibrated open-set novelty detection (EVT novelty score with a checked error rate, not annotation), validated by a leakage-controlled retrospective benchmark contrasting a leakage-clean protein FM (ESM-2) vs a genomic FM (Genos-m).*
+
+Differentiators: novelty-not-annotation (vs HiFi-NN) · formal EVT calibration (vs HiFi-NN cutoff / DeepVirus hypothesis test) · microbial functional (vs DeepVirus viral) · leakage-controlled retrospective (vs plain temporal holdout). **Caveat to honour: retrospective validation is not itself novel — the leakage control (P1-D7) is.**
+
+- [x] Search run; closest prior art + differentiators recorded (P1-D11).
+- [x] Novelty claim narrowed to a defensible statement.
+- [ ] Re-run immediately before submission (Phase 4).
 
 ---
 
@@ -159,11 +167,12 @@ Track 1 owns the parameters (f, floor, cap, G, embedding budget, seed) and the a
 - [x] Data provenance + subsetting standard — **P1-D4**.
 - [x] Go/no-go proxy outcome (GO) — **P1-D5**.
 - [x] Benchmark subset spec (stratified panel + budget) — **P1-D6** (§6).
-- [ ] Embedding layer/pooling/normalisation + model training cutoffs (§2) — pending full spec.
+- [x] Model training cutoffs verified + per-arm leakage handling — **P1-D7**.
+- [x] Literature search + narrowed novelty claim — **P1-D11** (§4).
+- [ ] Embedding layer/pooling/normalisation (§2) — pending full spec.
 
 ## Next Track 1 tasks
 
-1. Verify ESM-2 and Genos-m training cutoffs (leakage argument, P1-D2).
-2. Systematic literature search (§4).
-3. Finalise embedding-extraction spec (§2).
-4. Hand the subset spec (§6) to Track 2; review the 50-genome pilot's measured rates before the full run.
+1. Finalise embedding-extraction spec (§2) — layer/pooling/normalisation, ORF-calling for the ESM-2 arm.
+2. Hand the subset spec (§6) to Track 2; review the 50-genome pilot's measured rates before the full run.
+3. Re-run the literature search before submission (§4).
