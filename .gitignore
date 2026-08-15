@@ -9,6 +9,7 @@ Paper/
 # data/ contents rather than the directory itself, with explicit un-ignores below.
 /data/*
 !/data/manifest.json
+!/data/.ops/
 !/data/processed/
 /data/processed/*
 !/data/processed/*/
