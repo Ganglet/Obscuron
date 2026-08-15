@@ -53,4 +53,10 @@ Supplementary references for broadening the characterised set at the go/no-go ga
 - Chothia, "One thousand families for the molecular biologist," *Nature* 357, 1992 — structural conservation.
 - "Detecting Anomalous Proteins Using Deep Representations," *NAR Genomics and Bioinformatics* 6(1), 2024 — embedding-based protein anomaly detection.
 
+## Closest prior art (Phase-1 literature search, P1-D11)
+
+- Ayres, Munsamy et al., "Annotating the microbial dark matter with HiFi-NN," *iScience* 2025 (PMC12148589) — closest by target; annotates dark matter to EC numbers over ESM-2 650M embeddings with a heuristic kNN confidence. Obscuron differs: open-set **novelty** (not annotation) with formal EVT calibration and a leakage-controlled retrospective benchmark.
+- "DeepVirus" / "Illuminating the Virosphere's Dark Matter using Hierarchical Deep Learning," *bioRxiv* 2025 — open-set recognition + protein FM + genome context for novel viral groups. Obscuron differs: microbial **functional** dark matter (not viral lineage), EVT calibration (not hypothesis testing).
+- Ma et al., "Predicting functions of uncharacterized gene products from microbial communities" (FUGAsseM), *Nature Biotechnology* 2025 — genomic-context function prediction with temporal-holdout validation. Establishes retrospective validation is *not itself novel*; Obscuron's retrospective contribution is the leakage control (P1-D7).
+
 Full source list: blueprint §12 (`../Microbial_Dark_Matter_Blueprint.pdf`).

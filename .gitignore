@@ -2,8 +2,21 @@
 Paper/
 
 # Reference-database snapshots, sequences, embeddings — never commit (large; download/build via scripts)
-# includes GTDB releases, Pfam/UniProt dumps, FASTA, and cached embedding matrices
-/data/
+# includes GTDB releases, Pfam/UniProt dumps, FASTA, and cached embedding matrices.
+# Small derived artifacts (manifest, summary stats, sampled panels) ARE committed —
+# see docs/reproducibility.md and Track1_phase1_benchmark_scope.md section 6 ("the
+# committed artifact; sequences and embeddings stay gitignored") — so this ignores
+# data/ contents rather than the directory itself, with explicit un-ignores below.
+/data/*
+!/data/manifest.json
+!/data/.ops/
+!/data/processed/
+/data/processed/*
+!/data/processed/*/
+/data/processed/*/*
+!/data/processed/*/*.json
+!/data/processed/*/*.csv
+/data/processed/*/taxonomy.csv
 
 # External tools cloned/built locally, not vendored (e.g. Foldseek binaries) — see README/ACKNOWLEDGEMENTS
 tools/
@@ -67,3 +80,7 @@ figures/*.svg
 
 # Nemotr
 Run NVIDIA Nemotron 3 Ultra FREE in Your Terminal.docx
+
+# Dark Matter Files
+Microbial_Dark_Matter_Blueprint_Updated.pdf
+Microbial_Dark_Matter_Roadmap_Cards.docx

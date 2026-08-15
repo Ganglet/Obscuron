@@ -16,6 +16,7 @@ dependencies = [
     "tqdm>=4.66",
     "requests>=2.32",
     "boto3>=1.43.67",
+    "pyhmmer>=0.12.1",
 ]
 
 [dependency-groups]

@@ -1,0 +1,129 @@
+[
+  {
+    "source": "gtdb",
+    "release": "R226",
+    "fetched_at_utc": "2026-08-05T16:51:56.585164+00:00",
+    "files": [
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R226\\bac120_taxonomy_r226.tsv.gz",
+        "size_bytes": 7607942
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R226\\ar53_taxonomy_r226.tsv.gz",
+        "size_bytes": 227138
+      }
+    ],
+    "host": "RAYYAN",
+    "extra": {
+      "metadata_only": true
+    }
+  },
+  {
+    "source": "gtdb",
+    "release": "R232",
+    "fetched_at_utc": "2026-08-08T05:35:57.904153+00:00",
+    "files": [
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R232\\bac120_taxonomy_r232.tsv.gz",
+        "size_bytes": 9886191
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R232\\ar53_taxonomy_r232.tsv.gz",
+        "size_bytes": 311583
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R232\\bac120_metadata_r232.tsv.gz",
+        "size_bytes": 289043801
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R232\\ar53_metadata_r232.tsv.gz",
+        "size_bytes": 7015869
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R232\\MD5SUM.txt",
+        "size_bytes": 5482
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R232\\FILE_DESCRIPTIONS.txt",
+        "size_bytes": 7434
+      }
+    ],
+    "host": "RAYYAN",
+    "extra": {
+      "metadata_only": true
+    }
+  },
+  {
+    "source": "gtdb",
+    "release": "R207",
+    "fetched_at_utc": "2026-08-08T05:38:21.807461+00:00",
+    "files": [
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R207\\bac120_taxonomy_r207.tsv.gz",
+        "size_bytes": 3226423
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R207\\ar53_taxonomy_r207.tsv.gz",
+        "size_bytes": 92148
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R207\\MD5SUM.txt",
+        "size_bytes": 3764
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R207\\FILE_DESCRIPTIONS.txt",
+        "size_bytes": 6779
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R207\\bac120_metadata_r207.tar.gz",
+        "size_bytes": 78962871
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\gtdb_R207\\ar53_metadata_r207.tar.gz",
+        "size_bytes": 1620728
+      }
+    ],
+    "host": "RAYYAN",
+    "extra": {
+      "metadata_only": true
+    }
+  },
+  {
+    "source": "pfam",
+    "release": "35.0",
+    "fetched_at_utc": "2026-08-11T06:32:53.076123+00:00",
+    "files": [
+      {
+        "path": "E:\\dark_matter\\data\\raw\\pfam_35.0\\Pfam-A.clans.tsv.gz",
+        "size_bytes": 358156
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\pfam_35.0\\Pfam-A.hmm.gz",
+        "size_bytes": 293000230
+      }
+    ],
+    "host": "RAYYAN",
+    "extra": {
+      "metadata_only": false
+    }
+  },
+  {
+    "source": "pfam",
+    "release": "37.0",
+    "fetched_at_utc": "2026-08-11T10:59:36.736042+00:00",
+    "files": [
+      {
+        "path": "E:\\dark_matter\\data\\raw\\pfam_37.0\\Pfam-A.clans.tsv.gz",
+        "size_bytes": 411178
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\pfam_37.0\\Pfam-A.hmm.gz",
+        "size_bytes": 310495632
+      }
+    ],
+    "host": "RAYYAN",
+    "extra": {
+      "metadata_only": false
+    }
+  }
+]
