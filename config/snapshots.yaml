@@ -1,20 +1,22 @@
 # Historical/current reference-database snapshot pair used for retrospective
 # (temporal) validation — see blueprint §2.5 and §7.
 #
-# TODO(Angshuman): confirm or override this pair. See docs/reproducibility.md
-# for the tradeoffs. Recommended default below gives a ~4 year gap between
-# GTDB releases, which is a reasonable starting point for estimating the
-# retrospective positive-label set size (blueprint §7 go/no-go criterion).
+# CONFIRMED (Track 1, 2026-08-09, P1-D2): this pair is the boundary. Chosen so
+# T₀ (Pfam-35, ~late 2021) aligns with ESM-2's training cutoff, minimising
+# protein-arm embedding leakage; the ESM-2-vs-Genos-m comparison then doubles
+# as a leakage-sensitivity probe. Go/no-go proxy = GO by 2-3 orders (P1-D5).
+# See docs/problems_and_decisions.md and docs/reproducibility.md.
 #
 # 2026-08-08: bumped current from R226 to R232 — R226 is no longer GTDB's
 # latest release (confirmed against data.gtdb.ecogenomic.org/releases/,
 # R232 published 2026-04-04). This is just keeping "current" actually
 # current; the historical/current PAIRING itself is still Track 1's call.
 #
-# Note: Pfam is now folded into InterPro; 37.0 (June 2024) is the last
-# standalone Pfam-A release. If a more recent "family added" signal is
-# needed, InterPro release notes may be a better primary resource than Pfam
-# going forward — flagged for Track 1 to decide.
+# DECIDED (P1-D3): the CURRENT "characterised" signal is InterPro-latest
+# (Pfam froze at 37.0 / Jun 2024). Pfam-35 below is the HISTORICAL dark-matter
+# reference — a GTDB protein with no Pfam-35 hit at the GA threshold is "dark
+# at T0". GTDB taxonomy is the sequence source, not the function signal.
+# Track 2: wire an InterPro-latest fetch for the "characterised-by-T1" step.
 
 historical:
   gtdb_release: "R207"   # April 2022
