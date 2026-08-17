@@ -45,18 +45,20 @@ The choice is driven by **embedding temporal leakage**, not just gap length. Ret
 
 ## 2. Embedding-extraction protocol
 
-**Status:** pending
+**Status:** DECIDED — see P1-D13.
 
 Specify how a sequence becomes a vector — identically for Genos-m and ESM-2 so the comparison (D3) is fair.
 
 **Design note — cutoffs verified; the comparison is a leakage probe (P1-D2, P1-D7).** ESM-2 = UniRef50 **2021_04** (~late 2021) ≈ T₀ → **leakage-clean**, so it carries the retrospective headline. Genos-m = pretrained on **GTDB R220 (24 Apr 2024)** — inside the T₀→T₁ window and the same DB → contaminated; handled by restricting Genos-m positives to **post-R220 (Apr 2024→T₁)** for a clean number, plus the full-window number to quantify contamination. Genos-m leak is self-supervised (weaker) and conservative in direction. Full handling in P1-D7.
 
-To specify:
-- [ ] **Model selection & versions** — Genos-m checkpoint (verify against source preprint); ESM-2 size — smoke test uses `esm2_t30_150M`; use a larger variant (`t33_650M`+) for the actual comparison (D9). Record each model's **training-data cutoff**.
-- [ ] **Input unit** — nucleotide contig/gene (Genos-m) vs translated protein (ESM-2). Note the asymmetry: Genos-m can see genomic context, ESM-2 sees only the translated ORF. Record the translation/ORF-calling step for the ESM-2 arm.
-- [ ] **Layer / pooling strategy** — which hidden layer; mean-pool vs [CLS]/EOS vs per-residue→pooled. Backends currently mean-pool `last_hidden_state`. Keep identical across models where architecture allows.
-- [ ] **Batching & precision** — batch size, max sequence length / chunking (Genos-m cap 8192 single-nt tokens ≈ 8kb → long genes need chunking), fp16 on MPS/CUDA.
-- [ ] **Normalisation** — L2-normalise embeddings before distance computation? (affects kNN/EVT downstream). Decide and justify.
+Specification (P1-D13). Overriding principle: **everything identical across the two arms except the one necessary difference — protein vs nucleotide input.** That is what makes any genome-vs-protein result attributable to the model, not to preprocessing.
+
+- [x] **Input modality — one gene set, two representations.** Both arms use the *same* GTDB gene calls. ESM-2 ← amino-acid CDS (`gtdb_proteins_aa_reps`); Genos-m ← nucleotide CDS (`gtdb_proteins_nt_reps`). **No ORF-calling on our side** — GTDB ships both, gene-for-gene (verified 219/219 per genome, P1-D9), so we inherit its gene predictions and never translate or reverse-translate ourselves. This is the contract the embed scripts must honour: `--model genos-m` reads the `.fna` nucleotides, never the `.faa` proteins (the P1-D12 bug).
+- [x] **Models & versions.** ESM-2 = `facebook/esm2_t33_650M_UR50D` (33 layers, 1280-dim; the 150M smoke-test variant was iteration-only). Genos-m = `BGI-HangzhouAI/Genos-m` (1024-dim). Training cutoffs fixed in P1-D7.
+- [x] **Layer & pooling — identical across arms.** Final hidden layer, **mean-pooled over tokens** (attention-masked) — what both backends already do (`last_hidden_state`). Rationale: mean-pooled last-layer is the standard sequence-level embedding, matches the closest prior art (HiFi-NN, on ESM-2 650M), and keeping it identical makes the comparison controlled. Deferred ablation (Phase 2, only if separation is weak): a mid-to-late layer, since ESM-2's last layer can over-specialise to its MLM objective.
+- [x] **Normalisation — L2 (cosine geometry).** L2-normalise every embedding before any distance/scoring step, so downstream distance is cosine. Rationale: cosine is scale-invariant, standard for FM-embedding similarity, already the metric the Week-2 separation check used (within-family 0.963 vs across 0.928), and it puts the 1280-dim and 1024-dim spaces on comparable footing. This is the geometry the Phase-2 kNN/EVT scorer inherits.
+- [x] **Length & precision.** fp16 on MPS/CUDA. Truncate at each model's `max_tokens` (ESM-2 1024 aa, Genos-m 8192 nt ≈ 8 kb) and **log the truncated fraction**; if material, switch long sequences to chunk-and-mean-pool rather than silent truncation. Batch sizes hardware-tuned (ESM-2 ~8, Genos-m ~4 on MPS).
+- [x] **Matched-length caveat for the comparison.** The arms have different effective limits (ESM-2 1024 aa vs Genos-m ~2730 aa-equivalent at 8192 nt), so long genes are seen asymmetrically. For the *fair* genome-vs-protein separation test, restrict to genes both models see fully (≤ 1024 aa); the full novelty run truncates + logs.
 
 **Cross-track hand-off:** Track 2 implements extraction to this spec and returns embedding matrices for the labelled subset so Track 1 can compare category separation.
 
@@ -169,10 +171,12 @@ Track 1 owns the parameters (f, floor, cap, G, embedding budget, seed) and the a
 - [x] Benchmark subset spec (stratified panel + budget) — **P1-D6** (§6).
 - [x] Model training cutoffs verified + per-arm leakage handling — **P1-D7**.
 - [x] Literature search + narrowed novelty claim — **P1-D11** (§4).
-- [ ] Embedding layer/pooling/normalisation (§2) — pending full spec.
+- [x] Embedding-extraction protocol (modality/layer/pooling/normalisation) — **P1-D13** (§2).
 
-## Next Track 1 tasks
+**Phase 1 Track 1: COMPLETE.** All six deliverables closed (§1 boundary, §2 embedding protocol, §3 go/no-go GO, §4 lit search, §5 provenance standard, §6 subset spec); go/no-go empirically confirmed by Track 2 (4,138 positives).
 
-1. Finalise embedding-extraction spec (§2) — layer/pooling/normalisation, ORF-calling for the ESM-2 arm.
-2. Hand the subset spec (§6) to Track 2; review the 50-genome pilot's measured rates before the full run.
-3. Re-run the literature search before submission (§4).
+## Next (Phase 2)
+
+1. **EVT vs density-based scorer** — the Phase-2 gate. Title commits to *calibrated*, so lead with EVT tail-calibration + a kNN/density baseline (D4). This is the first Phase-2 methodology decision.
+2. Consume the ESM-2 (and, once the P1-D12 nt fix lands, Genos-m) panel embeddings into the Layer-1 novelty scorer.
+3. Re-run the literature search before submission (§4, Phase 4).
