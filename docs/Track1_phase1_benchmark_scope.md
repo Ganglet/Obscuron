@@ -2,9 +2,9 @@
 
 **Phase:** 1 — Benchmark Construction and Embedding Pipeline (time-boxed, weeks 1–3)
 **Track:** 1 — Methodology, Design & Analysis
-**Status:** In progress
+**Status:** COMPLETE — tagged `phase-1-complete`; go/no-go passed (GO). Phase 2 → `docs/Track1_phase2_scorer_design.md`.
 **Weeks:** 1–3
-**Branch:** `phase-1-track-1`
+**Branch:** merged to `main` (was `phase-1-track-1` / `week-01-benchmarking`)
 
 ---
 
