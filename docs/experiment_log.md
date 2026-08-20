@@ -59,3 +59,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: min_members=5, max_families=5, seed=42 (frozen, config/scorer.yaml)
 - Result: 5 families: median AUROC=0.9792, mean=0.9553; calibration in E:\dark_matter\results\heldout_esm2_calibration.csv
 - Next: report to Track 1 for interpretation against the acceptance sanity checks in docs/Track2_Phase2_scoring_handoff.md
+
+## 2026-08-20 — held-out-family evaluation (esm2) -- AUROC distribution + calibration
+- Commit: 8dabd13
+- Config: min_members=5, max_families=500, seed=42 (frozen, config/scorer.yaml)
+- Result: 500 families: median AUROC=0.9057, mean=0.8712; calibration in E:\dark_matter\results\heldout_esm2_calibration.csv
+- Next: report to Track 1 for interpretation against the acceptance sanity checks in docs/Track2_Phase2_scoring_handoff.md
