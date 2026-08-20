@@ -1,0 +1,53 @@
+# Phase 2 calibrated novelty scorer -- FROZEN hyperparameters (P2-D5).
+#
+# Declared BEFORE any scorer output. These values are Track 1's design decision
+# (P2-D5); change ONLY by a reviewed commit that states a reason (same rule as
+# config/snapshots.yaml). Tuning any of these on results is the fishing this file
+# exists to prevent. Track 2 fills the [TODO] machine-specific fields (artifact
+# paths, exact recorded seed) and commits before the first run.
+#
+# Design doc: docs/Track1_phase2_scorer_design.md   Decisions: P2-D1..D5
+
+scorer:
+  metric: cosine                 # distance = 1 - cosine sim on L2-normalised embeddings (P1-D13, P2-D2)
+  knn:
+    k: 5                         # HEADLINE k (P2-D5)
+    reduce: mean                 # mean-of-k nearest, NOT distance-to-kth (P2-D2)
+    k_sensitivity: [1, 5, 10, 20]   # appendix sensitivity ONLY -- never selects the headline
+  gpd:                           # EVT peaks-over-threshold headline (P2-D1)
+    threshold_rule: quantile
+    threshold_quantile: 0.90     # u = 90th percentile of reference leave-one-out kNN distances
+    fit: mle                     # scipy.stats.genpareto
+    diagnostics: [mean_residual_life, qq, anderson_darling]
+
+evaluation:
+  precision_at_k:                # ecological validity (P2-D3)
+    K: [50, 100, 500, 1000]
+    report_curve: true
+    lift_baseline: set_positive_rate   # lift = P@K / (positives / dark queries ranked); report exact set rate + natural ~1.4%
+  heldout_family:                # controlled ground truth for AUROC + calibration (P2-D4)
+    min_members: 5               # hold out Pfam-35 families with >= 5 members in the reference
+    max_families: 500            # if more qualify, stratified sample of this many
+    stratify_by: [phylum, family_size]
+    controls_match: [length, phylum, family_size]   # novel vs known matched on these
+  auroc:
+    aggregate: per_family_distribution
+  calibration:
+    ground_truth: heldout_family # NEVER characterised-by-T1 (biased positives) -- P2-D3
+    bins: 10
+
+arms:                            # scorer is IDENTICAL across arms; only the embedding changes (P2-D2)
+  esm2:                          # leakage-clean HEADLINE (P1-D7) -- implement/run this first
+    embeddings: data/processed/gtdb_R207/esm2_panel_embeddings.npy        # [TODO Track 2: confirm actual artifact path]
+    manifest:   data/processed/gtdb_R207/esm2_panel_embeddings_manifest.csv
+    leakage: clean
+  genos_m:                       # leakage-controlled comparison (P1-D7) -- BLOCKED on the nt embed-path fix (P1-D12)
+    embeddings: data/processed/gtdb_R207/genos-m_panel_embeddings.npy     # [TODO Track 2: does not exist yet]
+    manifest:   data/processed/gtdb_R207/genos-m_panel_embeddings_manifest.csv
+    leakage: controlled
+    positives_window: post_R220  # clean number; also report full 2022->T1 window to quantify contamination
+
+fair_comparison:
+  max_aa_length: 1024            # restrict BOTH arms for the ESM-2-vs-Genos-m separation (P1-D13)
+
+seed: null                       # [TODO Track 2: set to the exact recorded Phase-1 panel seed (P1-D6)]
