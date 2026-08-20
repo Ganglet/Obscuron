@@ -8,8 +8,15 @@ inside the window). Genos-m is not runnable on this machine's RTX 4060
 (OOMs even quantized, see docs/reproducibility.md) -- pass --model
 genos-m on a machine that can load it.
 
+--model genos-m reads from panel_nucleotides/*.fna instead of
+panel_proteins/*.faa (same record IDs, same genes, DNA instead of the
+translated protein) -- Genos-m does single-nucleotide tokenization and
+can't take amino acids as input (P1-D9). Run
+scripts/extract_panel_nucleotides.py first to populate that directory.
+
 Usage:
     uv run python scripts/embed_panel_sample.py --release R207
+    uv run python scripts/embed_panel_sample.py --release R207 --model genos-m
 """
 
 from __future__ import annotations
@@ -38,14 +45,23 @@ def main() -> None:
     out_dir = PROC_ROOT / f"gtdb_{args.release}"
     sample = pd.read_csv(out_dir / "embedding_sample.csv")
 
-    proteins_dir = out_dir / "panel_proteins"
+    # Genos-m does single-nucleotide tokenization -- feeding it panel_proteins'
+    # amino acids would silently run, just on the wrong modality (P1-D9).
+    # panel_nucleotides/*.fna has the same record IDs, same genes, just DNA.
+    if args.model == "genos-m":
+        seq_dir = out_dir / "panel_nucleotides"
+        suffix = "_protein.fna"
+    else:
+        seq_dir = out_dir / "panel_proteins"
+        suffix = "_protein.faa"
+
     seq_by_id: dict[str, str] = {}
     print(f"loading sequences for {len(sample)} sampled proteins across "
-          f"{sample['genome_accession'].nunique()} genomes...", flush=True)
+          f"{sample['genome_accession'].nunique()} genomes from {seq_dir}...", flush=True)
     for genome_accession, group in sample.groupby("genome_accession"):
-        faa_path = proteins_dir / f"{genome_accession}_protein.faa"
+        seq_path = seq_dir / f"{genome_accession}{suffix}"
         wanted = set(group["protein_id"])
-        for record in SeqIO.parse(faa_path, "fasta"):
+        for record in SeqIO.parse(seq_path, "fasta"):
             if record.id in wanted:
                 seq_by_id[record.id] = str(record.seq)
 
