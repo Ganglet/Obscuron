@@ -35,3 +35,15 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: R207 panel (502 genomes), gtdb_proteins_nt_reps streamed directly from GTDB public mirror (61GB archive), no AWS credentials needed
 - Result: 502/502 genomes extracted, 1.4GB total, gene counts verified matching the protein version exactly (e.g. 219/219) -- same genes, DNA modality
 - Next: Angshuman can now run Genos-m against real, correctly-matched panel data on his M1 Pro
+
+## 2026-08-20 — layer 1 evt novelty scorer (esm2, R207 panel)
+- Commit: c235131
+- Config: k=10, gpd_threshold_quantile=0.9 (PROVISIONAL, not locked by Track 1)
+- Result: 29862 reference, 34138 queries scored (4138 true positives); gpd u=0.0297 shape=0.0966; mean novelty positive=0.1854 vs still-dark=0.1631
+- Next: Precision@K, held-out-family AUROC, and calibration check still need Track 1 to fix K and the held-out family before real evaluation numbers can be reported
+
+## 2026-08-20 — layer 1 evaluation (esm2, R207 panel) -- Precision@K, held-out-family AUROC, calibration
+- Commit: c235131
+- Config: k=10, gpd_threshold_quantile=0.9, held_out_family=PF00528.25 (145 members), precision_k=[50, 100, 500, 1000, 5000] (ALL PROVISIONAL, not locked by Track 1)
+- Result: Precision@K: {50: 0.0, 100: 0.01, 500: 0.028, 1000: 0.056, 5000: 0.1312} (baseline rate 0.1212); held-out-family AUROC=0.8980; figures in E:\dark_matter\data\processed\gtdb_R207\figures
+- Next: waiting on Track 1 to lock k, GPD threshold, K, and the held-out family choice before these numbers are reportable as final
