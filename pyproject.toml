@@ -17,6 +17,8 @@ dependencies = [
     "requests>=2.32",
     "boto3>=1.43.67",
     "pyhmmer>=0.12.1",
+    "scipy>=1.17.1",
+    "matplotlib>=3.11.1",
 ]
 
 [dependency-groups]
