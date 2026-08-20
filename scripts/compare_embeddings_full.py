@@ -2,12 +2,19 @@
 """CLI: embedding-separation comparison across a phylum-diverse sample of
 panel genomes, not just the single-genome pilot (compare_embeddings_pilot.py).
 
-Genos-m OOMs on this machine's RTX 4060 (see docs/reproducibility.md);
-this runs ESM-2 only. Genos-m needs to run on Angshuman's M1 Pro, or this
-same approach pointed at Genos-m there.
+Genos-m OOMs on this machine's RTX 4060 (see docs/reproducibility.md), so
+here --model esm2 is the only one that actually runs; --model genos-m
+needs Track 1's M1 Pro. Either way, family labels always come from the
+protein arm (Pfam is a protein domain database), but the sequences
+actually embedded switch with --model: esm2 reads panel_proteins/*.faa,
+genos-m reads panel_nucleotides/*.fna (same record IDs, same genes, DNA
+instead of translated protein) since Genos-m does single-nucleotide
+tokenization and can't take amino acids as input (P1-D9). Run
+scripts/extract_panel_nucleotides.py first to populate that directory.
 
 Usage:
     uv run python scripts/compare_embeddings_full.py --n-genomes 30
+    uv run python scripts/compare_embeddings_full.py --n-genomes 30 --model genos-m
 """
 
 from __future__ import annotations
@@ -64,6 +71,9 @@ def main() -> None:
     faa_files = [f for f in faa_files if f.exists()]
     print(f"sampled {len(faa_files)} genomes across phyla for the labeled subset", flush=True)
 
+    # Family labels always come from the protein arm -- Pfam is a protein
+    # domain database, hmmscan needs amino acids regardless of which model
+    # ends up getting embedded.
     alphabet = Alphabet.amino()
     sequences = load_protein_sequences_multi(faa_files, alphabet)
     print(f"{len(sequences)} proteins loaded", flush=True)
@@ -77,13 +87,33 @@ def main() -> None:
     total = sum(len(v) for v in families.values())
     print(f"labeled subset: {len(families)} families, {total} sequences", flush=True)
 
+    # But the sequences actually embedded must match the model's modality
+    # (P1-D9): Genos-m does single-nucleotide tokenization, so its arm reads
+    # panel_nucleotides/*.fna instead of the protein FASTA -- same record
+    # IDs, same genes, just DNA. ESM-2 keeps reading protein as before.
+    if args.model == "genos-m":
+        nt_dir = PROC_ROOT / f"gtdb_{args.release}" / "panel_nucleotides"
+        embed_files = [nt_dir / f"{acc}_protein.fna" for acc in accessions]
+    else:
+        embed_files = faa_files
+
     seq_by_id: dict[str, str] = {}
-    for faa_path in faa_files:
-        for record in SeqIO.parse(faa_path, "fasta"):
+    for seq_path in embed_files:
+        if not seq_path.exists():
+            continue
+        for record in SeqIO.parse(seq_path, "fasta"):
             seq_by_id[record.id] = str(record.seq)
 
     ordered_ids = [sid for ids in families.values() for sid in ids]
     labels = [fam for fam, ids in families.items() for _ in ids]
+
+    missing = [sid for sid in ordered_ids if sid not in seq_by_id]
+    if missing:
+        print(f"WARNING: {len(missing)} sequence IDs not found for {args.model}, dropping", flush=True)
+        keep = [sid in seq_by_id for sid in ordered_ids]
+        ordered_ids = [sid for sid, k in zip(ordered_ids, keep) if k]
+        labels = [lbl for lbl, k in zip(labels, keep) if k]
+
     seqs = [seq_by_id[sid] for sid in ordered_ids]
 
     print(f"loading {args.model}...", flush=True)
