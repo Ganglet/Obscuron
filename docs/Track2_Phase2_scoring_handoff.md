@@ -127,6 +127,26 @@ class NoveltyScorer:
 
 ---
 
+## Result schema (FROZEN — the Track-1 analysis harness reads exactly this)
+
+`scripts/analyze_scorer_results.py` (Track 1, already built) turns these into the
+paper figures. Emit them verbatim, one set per arm (`{arm}` ∈ `esm2`, `genos_m`):
+
+| file | columns |
+|------|---------|
+| `results/scorer_{arm}_ranked.csv`       | `protein_id, novelty, pvalue, distance, is_positive, phylum, length_aa` — one row per dark query |
+| `results/scorer_{arm}_gpd_qq.csv`       | `empirical, theoretical` — GPD tail QQ points |
+| `results/heldout_{arm}_auroc.csv`       | `family_id, n_members, phylum, auroc` — one row per held-out family |
+| `results/heldout_{arm}_calibration.csv` | `predicted, observed, n` — reliability bins (predicted novelty, observed novel fraction, bin count) |
+
+The harness **recomputes** Precision@K + lift from `ranked.csv` (both the `novelty`
+and `distance` rankings), so those need not be pre-tabulated — just emit the ranked
+queries with both columns. `results/` is gitignored (derived artifacts, P1-D4).
+Track 1 develops the harness against `scripts/mock_scorer_results.py` until the real
+run lands.
+
+---
+
 ## Acceptance sanity (ESM-2 arm — expected before trusting the numbers)
 
 - Reference LOO distances have a right tail the GPD fits: finite `xi`, `beta`; AD / QQ not catastrophic.
