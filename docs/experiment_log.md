@@ -47,3 +47,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: k=10, gpd_threshold_quantile=0.9, held_out_family=PF00528.25 (145 members), precision_k=[50, 100, 500, 1000, 5000] (ALL PROVISIONAL, not locked by Track 1)
 - Result: Precision@K: {50: 0.0, 100: 0.01, 500: 0.028, 1000: 0.056, 5000: 0.1312} (baseline rate 0.1212); held-out-family AUROC=0.8980; figures in E:\dark_matter\data\processed\gtdb_R207\figures
 - Next: waiting on Track 1 to lock k, GPD threshold, K, and the held-out family choice before these numbers are reportable as final
+
+## 2026-08-22 — genos-m embedding separation (30 genomes, 20 families)
+- Commit: c61f267
+- Config: genos-m, mean-pooled, unambiguous single-Pfam-35-hit proteins, 5/family, seed=42
+- Result: 100 sequences, 20 families: within-family cosine 0.997 vs across-family 0.993, gap 0.004
+- Next: compare against the other model's separation once both are available
