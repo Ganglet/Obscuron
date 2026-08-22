@@ -125,5 +125,24 @@
     "extra": {
       "metadata_only": false
     }
+  },
+  {
+    "source": "pfam",
+    "release": "35.0",
+    "fetched_at_utc": "2026-08-22T15:06:17.733975+00:00",
+    "files": [
+      {
+        "path": "/Users/angshumansmac/Desktop/BTECH/Sem7/Capstone/Obscuron/data/raw/pfam_35.0/Pfam-A.clans.tsv.gz",
+        "size_bytes": 358156
+      },
+      {
+        "path": "/Users/angshumansmac/Desktop/BTECH/Sem7/Capstone/Obscuron/data/raw/pfam_35.0/Pfam-A.hmm.gz",
+        "size_bytes": 293000230
+      }
+    ],
+    "host": "Angshumans-MacBook-Pro.local",
+    "extra": {
+      "metadata_only": false
+    }
   }
 ]
