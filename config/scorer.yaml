@@ -38,11 +38,11 @@ evaluation:
 
 arms:                            # scorer is IDENTICAL across arms; only the embedding changes (P2-D2)
   esm2:                          # leakage-clean HEADLINE (P1-D7) -- implement/run this first
-    embeddings: data/processed/gtdb_R207/esm2_panel_embeddings.npy        # [TODO Track 2: confirm actual artifact path]
+    embeddings: data/processed/gtdb_R207/esm2_panel_embeddings.npy        # confirmed: written by scripts/embed_panel_sample.py
     manifest:   data/processed/gtdb_R207/esm2_panel_embeddings_manifest.csv
     leakage: clean
   genos_m:                       # leakage-controlled comparison (P1-D7) -- BLOCKED on the nt embed-path fix (P1-D12)
-    embeddings: data/processed/gtdb_R207/genos-m_panel_embeddings.npy     # [TODO Track 2: does not exist yet]
+    embeddings: data/processed/gtdb_R207/genos-m_panel_embeddings.npy     # does not exist yet -- Genos-m arm blocked until this is embedded
     manifest:   data/processed/gtdb_R207/genos-m_panel_embeddings_manifest.csv
     leakage: controlled
     positives_window: post_R220  # clean number; also report full 2022->T1 window to quantify contamination
@@ -50,4 +50,4 @@ arms:                            # scorer is IDENTICAL across arms; only the emb
 fair_comparison:
   max_aa_length: 1024            # restrict BOTH arms for the ESM-2-vs-Genos-m separation (P1-D13)
 
-seed: null                       # [TODO Track 2: set to the exact recorded Phase-1 panel seed (P1-D6)]
+seed: 42                         # confirmed: scripts/build_genome_panel.py and build_embedding_sample.py both used 42 (recorded in genome_panel_summary.json)

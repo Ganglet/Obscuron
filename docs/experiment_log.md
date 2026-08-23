@@ -48,6 +48,24 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Result: Precision@K: {50: 0.0, 100: 0.01, 500: 0.028, 1000: 0.056, 5000: 0.1312} (baseline rate 0.1212); held-out-family AUROC=0.8980; figures in E:\dark_matter\data\processed\gtdb_R207\figures
 - Next: waiting on Track 1 to lock k, GPD threshold, K, and the held-out family choice before these numbers are reportable as final
 
+## 2026-08-20 — scorer evaluation -- precision@k (esm2)
+- Commit: 216df0b
+- Config: k=5, threshold_quantile=0.9, K=[50, 100, 500, 1000] (frozen, config/scorer.yaml)
+- Result: P@K={50: 0.0, 100: 0.0, 500: 0.028, 1000: 0.06}, lift={50: 0.0, 100: 0.0, 500: 0.2309966167230546, 1000: 0.49499275012083127}; baseline P@K={50: 0.0, 100: 0.0, 500: 0.028, 1000: 0.06}, baseline lift={50: 0.0, 100: 0.0, 500: 0.2309966167230546, 1000: 0.49499275012083127}; set_positive_rate=0.1212; gpd ks_pvalue=0.9837
+- Next: held-out-family AUROC + calibration via scripts/heldout_family_eval.py
+
+## 2026-08-20 — held-out-family evaluation (esm2) -- AUROC distribution + calibration
+- Commit: 216df0b
+- Config: min_members=5, max_families=5, seed=42 (frozen, config/scorer.yaml)
+- Result: 5 families: median AUROC=0.9792, mean=0.9553; calibration in E:\dark_matter\results\heldout_esm2_calibration.csv
+- Next: report to Track 1 for interpretation against the acceptance sanity checks in docs/Track2_Phase2_scoring_handoff.md
+
+## 2026-08-20 — held-out-family evaluation (esm2) -- AUROC distribution + calibration
+- Commit: 8dabd13
+- Config: min_members=5, max_families=500, seed=42 (frozen, config/scorer.yaml)
+- Result: 500 families: median AUROC=0.9057, mean=0.8712; calibration in E:\dark_matter\results\heldout_esm2_calibration.csv
+- Next: report to Track 1 for interpretation against the acceptance sanity checks in docs/Track2_Phase2_scoring_handoff.md
+
 ## 2026-08-22 — genos-m embedding separation (30 genomes, 20 families)
 - Commit: c61f267
 - Config: genos-m, mean-pooled, unambiguous single-Pfam-35-hit proteins, 5/family, seed=42
