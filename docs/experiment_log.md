@@ -65,3 +65,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: min_members=5, max_families=500, seed=42 (frozen, config/scorer.yaml)
 - Result: 500 families: median AUROC=0.9057, mean=0.8712; calibration in E:\dark_matter\results\heldout_esm2_calibration.csv
 - Next: report to Track 1 for interpretation against the acceptance sanity checks in docs/Track2_Phase2_scoring_handoff.md
+
+## 2026-08-22 — genos-m embedding separation (30 genomes, 20 families)
+- Commit: c61f267
+- Config: genos-m, mean-pooled, unambiguous single-Pfam-35-hit proteins, 5/family, seed=42
+- Result: 100 sequences, 20 families: within-family cosine 0.997 vs across-family 0.993, gap 0.004
+- Next: compare against the other model's separation once both are available
