@@ -113,6 +113,9 @@ def main() -> None:
     ranked_path = RESULTS_ROOT / f"scorer_{args.arm}_precisionK.csv"
     ranked.to_csv(ranked_path, index=False)
 
+    qq_path = RESULTS_ROOT / f"scorer_{args.arm}_gpd_qq.csv"
+    pd.DataFrame({"empirical": diag["qq_empirical"], "theoretical": diag["qq_theoretical"]}).to_csv(qq_path, index=False)
+
     summary = {
         "arm": args.arm,
         "n_reference": len(reference),

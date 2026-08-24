@@ -71,3 +71,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: genos-m, mean-pooled, unambiguous single-Pfam-35-hit proteins, 5/family, seed=42
 - Result: 100 sequences, 20 families: within-family cosine 0.997 vs across-family 0.993, gap 0.004
 - Next: compare against the other model's separation once both are available
+
+## 2026-08-23 — scorer evaluation -- precision@k (esm2)
+- Commit: c42ef10
+- Config: k=5, threshold_quantile=0.9, K=[50, 100, 500, 1000] (frozen, config/scorer.yaml)
+- Result: P@K={50: 0.0, 100: 0.0, 500: 0.028, 1000: 0.06}, lift={50: 0.0, 100: 0.0, 500: 0.2309966167230546, 1000: 0.49499275012083127}; baseline P@K={50: 0.0, 100: 0.0, 500: 0.028, 1000: 0.06}, baseline lift={50: 0.0, 100: 0.0, 500: 0.2309966167230546, 1000: 0.49499275012083127}; set_positive_rate=0.1212; gpd ks_pvalue=0.9837
+- Next: held-out-family AUROC + calibration via scripts/heldout_family_eval.py
