@@ -1,6 +1,9 @@
 # Reference papers — copyright; cite in ACKNOWLEDGEMENTS.md instead
 Paper/
 
+# Manuscript drafts — working copy, not ready for the public repo
+paper_draft/
+
 # Reference-database snapshots, sequences, embeddings — never commit (large; download/build via scripts)
 # includes GTDB releases, Pfam/UniProt dumps, FASTA, and cached embedding matrices.
 # Small derived artifacts (manifest, summary stats, sampled panels) ARE committed —
