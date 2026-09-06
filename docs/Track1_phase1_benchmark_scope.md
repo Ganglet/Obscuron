@@ -36,8 +36,8 @@ The choice is driven by **embedding temporal leakage**, not just gap length. Ret
 - [x] Positive-label count projected (proxy) — §3 / P1-D5.
 - [x] T₀/T₁ fixed and recorded (P1-D2).
 - [x] Operational definition of "dark at T₀" fixed (§3 / P1-D3).
-- [ ] Verify each embedding model's exact training cutoff (feeds the leakage argument).
-- [ ] Add one shorter, recent robustness gap (secondary).
+- [x] Verify each embedding model's exact training cutoff (feeds the leakage argument). — DONE (P1-D7: ESM-2 = UniRef50 2021_04; Genos-m = GTDB R220).
+- [ ] Add one shorter, recent robustness gap (secondary). — DEFERRED / optional (never run; a nice-to-have second-boundary robustness point, not required for the claims).
 
 **Cross-track hand-off:** Track 2 differences R207-reps against Pfam-35 (dark set) and against InterPro-latest (characterised set); tool = `hmmscan` at GA thresholds.
 
@@ -74,7 +74,7 @@ Specification (P1-D13). Overriding principle: **everything identical across the 
 
 - [x] Projected positive count (proxy) — passes with huge margin.
 - [x] Compared against floor (D6) — GO.
-- [ ] Definitive count: `hmmscan(R207-reps, Pfam-35)` → dark; `hmmscan(dark, InterPro-latest)` → characterised (Week-2, Track 2).
+- [x] Definitive count: `hmmscan(R207-reps, Pfam-35)` → dark; `hmmscan(dark, InterPro-latest)` → characterised (Week-2, Track 2). — DONE via the Pfam-37 net-new-family proxy for InterPro-latest (P1-D8): 1,341,100 proteins → 297,798 dark, 4,138 positives (P1-D12).
 - **Selection-bias note (mandatory, D2):** characterised-since sequences are enriched for the *near-known*, so the positive set skews to moderate novelty, not maximal. Precision@K therefore rewards *real-but-tractable* novelty, not the most distant sequences — state this explicitly in the paper. (Track 1 interpretation deliverable.)
 
 ---
@@ -96,7 +96,7 @@ Differentiators: novelty-not-annotation (vs HiFi-NN) · formal EVT calibration (
 
 - [x] Search run; closest prior art + differentiators recorded (P1-D11).
 - [x] Novelty claim narrowed to a defensible statement.
-- [ ] Re-run immediately before submission (Phase 4).
+- [ ] Re-run immediately before submission (Phase 4). — PENDING (correctly): a Phase-4 pre-submission task, not yet due.
 
 ---
 
@@ -108,10 +108,10 @@ Differentiators: novelty-not-annotation (vs HiFi-NN) · formal EVT calibration (
 
 - [x] Repo structure, README, LICENSE, `.gitignore`, `ACKNOWLEDGEMENTS.md`, decisions log.
 - [x] Provenance + subsetting standard set (P1-D4).
-- [ ] Subset spec — how many species/phyla to sample (clears go/no-go with margin, embeddable on M1 Pro). **Next Track 1 task.**
-- [ ] Dataset manifest schema — per sequence: id, source snapshot + URL, dark-at-T₀ flag, characterised-by-T₁ flag + label, provenance/checksum.
-- [ ] Fixed seeds and version-controlled configs (`config/`) for every run.
-- [ ] Branch convention: `phase-N-track-N`; merge to `main` at phase boundaries.
+- [x] Subset spec — how many species/phyla to sample (clears go/no-go with margin, embeddable on M1 Pro). — DONE (P1-D6: 502-genome phylum-stratified panel).
+- [x] Dataset manifest schema — per sequence: id, source snapshot + URL, dark-at-T₀ flag, characterised-by-T₁ flag + label, provenance/checksum. — DONE, realized as `panel_protein_labels.csv` (id + dark/characterised/positive flags) + `data/manifest.json` (source URLs + checksums, file-level).
+- [x] Fixed seeds and version-controlled configs (`config/`) for every run. — DONE (`config/` = snapshots/models/scorer/immune.yaml; seeds fixed + recorded).
+- [x] Branch convention: `phase-N-track-N`; merge to `main` at phase boundaries. — DONE (adopted `phase-N-track-M`, PR to main at phase boundaries; branch hygiene done in Phase 2).
 
 ---
 

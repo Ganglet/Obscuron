@@ -1,0 +1,30 @@
+# Phase 3 Layer-3 immune self/non-self -- FROZEN hyperparameters (P3-D5).
+# Declared before any Layer-3 result; change only by a reviewed edit stating a reason
+# (same rule as config/scorer.yaml). Design: docs/Track1_phase3_immune_design.md
+
+detector:
+  n_detectors: 5000
+  margin_factor: 1.0          # margin = margin_factor * self nearest-neighbour scale
+  floor_factor: 0.1           # discard detectors whose radius <= floor_factor * scale
+  expand: 0.10                # candidate bounding-box expansion (box sampling only)
+  sampling: box               # "box" (bounding box) is the default; "jitter" @ scale 3.0 was tried and covered nothing (P3-D6)
+  jitter_scale: 3.0           # jitter stddev in units of the self NN scale (jitter variant only)
+  pca_dims: 50                # 0 = full 1280-d; sensitivity {0(full), 100, 50}
+  max_candidate_mult: 30      # try up to n_detectors * this candidate centres
+  seed: 42
+
+calibration:
+  alpha: 0.05                 # self-tolerance: held-out-self false-flag rate <= alpha
+  alpha_sensitivity: [0.01, 0.05, 0.10]
+  heldout_self_frac: 0.2      # fraction of self reserved to calibrate the threshold
+
+evaluation:
+  min_members: 5              # families with >= this many reference members (matches P2-D5)
+  eval_families: 60           # sampled families for held-out-family AUROC (rebuild per family)
+  eval_n_detectors: 1500      # smaller repertoire for the per-family rebuild loop
+  knn_k: 5                    # Layer-1 kNN proxy for the convergence comparison
+  topk_overlap: [50, 100, 500, 1000]
+
+arm:
+  embeddings: data/processed/gtdb_R207/esm2_reembed_L33_22.npz   # layer-22 reference (P2-D9)
+  layer: 22

@@ -67,7 +67,7 @@ is what the single global GPD measures data-efficiently.
 - [x] Headline vs baseline fixed (P2-D1).
 - [x] Score definition (kNN → GPD tail p-value) fixed.
 - [x] EVM/OpenMax scoped as secondary, gated on family counts.
-- [ ] Track 2 implements + first scored run (ESM-2 arm).
+- [x] Track 2 implements + first scored run (ESM-2 arm). — DONE (P2-D6: held-out AUROC 0.906; `esm2_novelty_scores.csv`).
 
 **Cross-track hand-off:** Track 2 builds a `darkmatter/scoring/` module — kNN over
 the L2-normalised embeddings (P1-D13), leave-one-out reference calibration, GPD
@@ -100,7 +100,7 @@ same kNN distance without the GPD step. EVM/OpenMax secondary, gated on §5.
 - [x] Reference = characterised-at-T₀; queries = dark-at-T₀ (P1-D3).
 - [x] Cosine geometry inherited (P1-D13); mean-of-`k` score fixed.
 - [x] Leave-one-out reference calibration fixed.
-- [ ] Track 2 builds reference/query matrices from Stage-3 embeddings + labels.
+- [x] Track 2 builds reference/query matrices from Stage-3 embeddings + labels. — DONE (scored run used reference = characterised, query = dark, from `embedding_sample.csv` + labels).
 
 **Cross-track hand-off:** Track 2 assembles the reference and query embedding
 matrices from the Stage-3 output + the dark/positive labels; `k` and the distance
@@ -144,7 +144,7 @@ the retrospective positives show it surfaces *real, later-confirmed biology*.**
 - [x] Precision@K driven by positives, reported as lift over the set base rate.
 - [x] AUROC + calibration driven by held-out-family (controlled), not positives.
 - [x] Selection-bias framing fixed (prioritisation, not determination).
-- [ ] Track 2 implements `evaluate_scorer.py` reading a frozen config (§5).
+- [x] Track 2 implements `evaluate_scorer.py` reading a frozen config (§5). — DONE, realized as the scored run (P2-D6) + Track-1 `reembed_eval.py` (held-out-family AUROC against `config/scorer.yaml`).
 
 **Cross-track hand-off:** Track 2 implements `evaluate_scorer.py` — Precision@K +
 lift, AUROC over held-out families, reliability diagram — all metrics, `K`, and
@@ -177,7 +177,7 @@ The controlled novelty ground truth that §3's AUROC and calibration depend on.
 - [x] Withhold → score → aggregate construction fixed.
 - [x] Matched controls (length, phylum, family size) fixed.
 - [x] Leakage-safety argument recorded (scorer sensitivity, embedding fixed).
-- [ ] Track 2 implements the withhold-score-aggregate loop.
+- [x] Track 2 implements the withhold-score-aggregate loop. — DONE (held-out-family eval realized in `reembed_eval.py`, run at full scale in P2-D9).
 
 **Cross-track hand-off:** Track 2 implements `heldout_family_eval.py` — the
 withhold/score/aggregate loop, controls sampled with the frozen seed.
@@ -211,7 +211,7 @@ the `config/snapshots.yaml` rule).
 - **Seeds:** every sampling step seeded and recorded in the frozen config.
 
 - [x] All values above declared pre-result.
-- [ ] Track 2 commits `config/scorer.yaml` with these values before the first run.
+- [x] Track 2 commits `config/scorer.yaml` with these values before the first run. — DONE (`config/scorer.yaml` written + frozen; values used by the P2-D9 eval).
 
 **Cross-track hand-off:** Track 2 commits `config/scorer.yaml` with every value
 above **before** the first scoring run; the evaluation scripts read only from it.
