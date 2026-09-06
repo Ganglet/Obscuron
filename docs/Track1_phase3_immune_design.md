@@ -2,8 +2,8 @@
 
 **Phase:** 3 — Immune-Inspired Discrimination Framework (Layer 3), weeks 7–9
 **Track:** 1 — Methodology, Design & Analysis
-**Status:** In progress
-**Branch:** `phase-3-track-1`
+**Status:** BUILT — first result in (P3-D6): calibration works (self-tolerance 0.024 ≤ α=0.05); detection is an honest negative (held-out-family AUROC 0.62 vs Layer-1 0.962); convergence with Layer-1 kNN positive (+0.32). Framing = supporting immune narrative + convergence corroboration.
+**Branch:** `phase-3-track-1-Immune-inspired-self/non-self-discrimination`
 
 ---
 
