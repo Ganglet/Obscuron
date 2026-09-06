@@ -1,0 +1,16 @@
+{
+  "n_detectors": 5000,
+  "pca_dims": 50,
+  "alpha": 0.05,
+  "self_flag_rate": 0.0,
+  "heldout_family_auroc_mean": 0.5,
+  "heldout_family_auroc_median": 0.5,
+  "n_families": 60,
+  "convergence_spearman_vs_knn": NaN,
+  "topk_jaccard_vs_knn": {
+    "50": 0.02040816326530612,
+    "100": 0.06382978723404255,
+    "500": 0.4947683109118087,
+    "1000": 1.0
+  }
+}
