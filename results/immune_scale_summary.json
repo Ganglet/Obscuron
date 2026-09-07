@@ -1,0 +1,19 @@
+{
+  "n_detectors": 5000,
+  "pca_dims": 50,
+  "alpha": 0.05,
+  "self_flag_rate_at_alpha": 0.02299349240780911,
+  "n_reference": 11527,
+  "n_queries": 14138,
+  "n_positive": 4138,
+  "full_scale_flag_rate_dark_query": 0.11946527090111755,
+  "full_scale_flag_rate_positive": 0.20082165297245047,
+  "full_scale_flag_rate_dark_negative": 0.0858,
+  "full_scale_convergence_spearman": 0.4853398692305625,
+  "full_scale_topk_jaccard": {
+    "50": 0.0,
+    "100": 0.005025125628140704,
+    "500": 0.059322033898305086,
+    "1000": 0.11982082866741321
+  }
+}

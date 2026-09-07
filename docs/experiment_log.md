@@ -77,3 +77,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: k=5, threshold_quantile=0.9, K=[50, 100, 500, 1000] (frozen, config/scorer.yaml)
 - Result: P@K={50: 0.0, 100: 0.0, 500: 0.028, 1000: 0.06}, lift={50: 0.0, 100: 0.0, 500: 0.2309966167230546, 1000: 0.49499275012083127}; baseline P@K={50: 0.0, 100: 0.0, 500: 0.028, 1000: 0.06}, baseline lift={50: 0.0, 100: 0.0, 500: 0.2309966167230546, 1000: 0.49499275012083127}; set_positive_rate=0.1212; gpd ks_pvalue=0.9837
 - Next: held-out-family AUROC + calibration via scripts/heldout_family_eval.py
+
+## 2026-09-07 — immune layer-3 sweep + full-scale dark-query flagging (esm2, layer 22)
+- Commit: 1710a5a
+- Config: n_detectors sweep [1000, 5000, 10000, 20000], margin sweep [0.5, 1.0, 1.5, 2.0], pca sweep [0, 50, 100], alpha sweep [np.float64(0.01), np.float64(0.05), np.float64(0.1)], base config from E:\dark_matter\config\immune.yaml
+- Result: detector-count AUROC [0.5919805228876249, 0.7365232906269299, 0.8322199805025746, 0.862368882894188]; margin AUROC [0.6269443604042476, 0.628536708964332, 0.6273491091682547, 0.6284035696557208]; pca AUROC [0.5325393100617686, 0.628536708964332, 0.6169832900230413]; full-scale (14138 queries) flag rate dark=0.1195 positive=0.2008 dark_negative=0.0858; convergence with Layer-1 rho=0.485, top-K jaccard={'50': 0.0, '100': 0.005025125628140704, '500': 0.059322033898305086, '1000': 0.11982082866741321}
+- Next: report to Track 1 against P3-D6's acceptance sanity + fold into manuscript (Phase 4)
