@@ -88,14 +88,14 @@ Two coordinated tracks, synchronised at each phase boundary.
 
 ## Status
 
-Phase 1 — Benchmark construction and scope gate (in progress).
+Phase 3 in progress (Track 1 closed; Track 2 running the sweep/scaling hand-off). Phases are tracked per-track — the two tracks do not close a phase in lockstep, only the phase *boundary* is synchronised. See `docs/problems_and_decisions.md` for the full decision log behind every row below.
 
-| Phase | Weeks | Focus | Status |
-|-------|-------|-------|--------|
-| 1 | 1–3 *(time-boxed)* | Retrospective benchmark + embedding pipeline; **resolve go/no-go dataset gate** | **In progress** |
-| 2 | 4–6 | Layer 1 calibrated novelty scorer against fixed metrics | Not started |
-| 3 | 7–9 | Layer 3 immune-inspired discrimination framework | Not started |
-| 4 | 10–12 | Scoped extension (if time) + manuscript | Not started |
+| Phase | Weeks | Focus | Track 1 (design/analysis) | Track 2 (implementation) |
+|-------|-------|-------|----------------------------|---------------------------|
+| 1 | 1–3 | Retrospective benchmark + embedding pipeline; go/no-go dataset gate | **Complete** (tagged `phase-1-complete`) | **Complete** — panel built, labeled, embedded (1.34M proteins scanned) |
+| 2 | 4–6 | Layer 1 calibrated novelty scorer (EVT/GPD) against fixed metrics | **Complete** — closed at P2-D10 | **Complete** — `darkmatter/scoring/` built, evaluated, results exported |
+| 3 | 7–9 | Layer 3 immune self/non-self discrimination framework | **Complete** — `darkmatter/immune/` built + first result (P3-D6) | **In progress** — parameter sweeps + scaling flagging to the full dark-query set (`phase-3-track-2-self-nonself-model`) |
+| 4 | 10–12 | Scoped extension (if time) + manuscript | In progress — `paper_draft/manuscript_draft.tex` drafted through Methods/Results/Discussion; Layer 3 findings not yet folded in | Not started |
 
 ### Phase 1 — Track 1 deliverables
 
@@ -106,7 +106,7 @@ Phase 1 — Benchmark construction and scope gate (in progress).
 - Establish documentation and reproducibility standards.
 
 Working record: `Documentation/01_track1_phase1_benchmark_scope.md`.
-Go/no-go floor: ≥ 50–100 characterised positive-label sequences for a stable AUROC; if short → widen the snapshot interval or broaden references; if infeasible → promote Layer 5 (coding-vs-noise statistics, which needs no positive set) to primary.
+Go/no-go floor: ≥ 50–100 characterised positive-label sequences for a stable AUROC; if short → widen the snapshot interval or broaden references; if infeasible → promote Layer 5 (coding-vs-noise statistics, which needs no positive set) to primary. Gate result: **GO**, cleared by 2–3 orders of magnitude (P1-D5).
 
 ---
 
