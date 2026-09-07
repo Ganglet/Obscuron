@@ -6,7 +6,7 @@ from darkmatter.embeddings.base import Embedder
 _BACKENDS = ("genos-m", "esm2")
 
 
-def load_embedder(backend: str) -> Embedder:
+def load_embedder(backend: str, layer: int | None = None) -> Embedder:
     if backend not in _BACKENDS:
         raise ValueError(f"Unknown backend {backend!r}, expected one of {_BACKENDS}")
 
@@ -21,6 +21,7 @@ def load_embedder(backend: str) -> Embedder:
             vram_bf16_gb=m["vram_bf16_gb"],
             quantize_below_vram_gb=m["quantize_below_vram_gb"],
             max_tokens=m["max_tokens"],
+            layer=layer,
         )
 
     from darkmatter.embeddings.esm2 import ESM2Embedder

@@ -41,8 +41,8 @@ arms:                            # scorer is IDENTICAL across arms; only the emb
     embeddings: data/processed/gtdb_R207/esm2_panel_embeddings.npy        # confirmed: written by scripts/embed_panel_sample.py
     manifest:   data/processed/gtdb_R207/esm2_panel_embeddings_manifest.csv
     leakage: clean
-  genos_m:                       # leakage-controlled comparison (P1-D7) -- BLOCKED on the nt embed-path fix (P1-D12)
-    embeddings: data/processed/gtdb_R207/genos-m_panel_embeddings.npy     # does not exist yet -- Genos-m arm blocked until this is embedded
+  genos_m:                       # leakage-controlled comparison (P1-D7) -- unblocked; layer 9 pooling, NOT the last layer
+    embeddings: data/processed/gtdb_R207/genos-m_panel_embeddings_L9.npy  # last-layer (12) pooling scored ~0.58 AUROC, near chance -- layer 9 scored ~0.80 on a 300-family probe (docs/experiment_log.md, 2026-09-07)
     manifest:   data/processed/gtdb_R207/genos-m_panel_embeddings_manifest.csv
     leakage: controlled
     positives_window: post_R220  # clean number; also report full 2022->T1 window to quantify contamination

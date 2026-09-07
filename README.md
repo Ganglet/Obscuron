@@ -88,13 +88,13 @@ Two coordinated tracks, synchronised at each phase boundary.
 
 ## Status
 
-Phase 3 in progress (Track 1 closed; Track 2 running the sweep/scaling hand-off). Phases are tracked per-track — the two tracks do not close a phase in lockstep, only the phase *boundary* is synchronised. See `docs/problems_and_decisions.md` for the full decision log behind every row below.
+Phase 3 complete on both tracks; Phase 4 (manuscript) in progress. Phases are tracked per-track — the two tracks do not close a phase in lockstep, only the phase *boundary* is synchronised. See `docs/problems_and_decisions.md` for the full decision log behind every row below.
 
 | Phase | Weeks | Focus | Track 1 (design/analysis) | Track 2 (implementation) |
 |-------|-------|-------|----------------------------|---------------------------|
 | 1 | 1–3 | Retrospective benchmark + embedding pipeline; go/no-go dataset gate | **Complete** (tagged `phase-1-complete`) | **Complete** — panel built, labeled, embedded (1.34M proteins scanned) |
 | 2 | 4–6 | Layer 1 calibrated novelty scorer (EVT/GPD) against fixed metrics | **Complete** — closed at P2-D10 | **Complete** — `darkmatter/scoring/` built, evaluated, results exported |
-| 3 | 7–9 | Layer 3 immune self/non-self discrimination framework | **Complete** — `darkmatter/immune/` built + first result (P3-D6) | **In progress** — parameter sweeps + scaling flagging to the full dark-query set (`phase-3-track-2-self-nonself-model`) |
+| 3 | 7–9 | Layer 3 immune self/non-self discrimination framework | **Complete** — `darkmatter/immune/` built + first result (P3-D6) | **Complete** — parameter sweeps + full-scale dark-query flagging (P3-D7, `phase-3-track-2-self-nonself-model`) |
 | 4 | 10–12 | Scoped extension (if time) + manuscript | In progress — `paper_draft/manuscript_draft.tex` drafted through Methods/Results/Discussion; Layer 3 findings not yet folded in | Not started |
 
 ### Phase 1 — Track 1 deliverables

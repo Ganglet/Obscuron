@@ -32,9 +32,17 @@ def _preprocess(seq: str) -> str:
 class GenosMEmbedder(Embedder):
     name = "genos-m"
 
-    def __init__(self, hf_repo: str, vram_bf16_gb: float, quantize_below_vram_gb: float, max_tokens: int = 8192):
+    def __init__(
+        self,
+        hf_repo: str,
+        vram_bf16_gb: float,
+        quantize_below_vram_gb: float,
+        max_tokens: int = 8192,
+        layer: int | None = None,
+    ):
         self.plan = plan_for_model(vram_bf16_gb, quantize_below_vram_gb)
         self.max_tokens = max_tokens
+        self.layer = layer
 
         self.tokenizer = AutoTokenizer.from_pretrained(hf_repo, trust_remote_code=True)
 
@@ -60,7 +68,10 @@ class GenosMEmbedder(Embedder):
             )
             tokens = {k: v.to(inference_device(self.plan, self.model)) for k, v in tokens.items()}
 
-            hidden = self.model(**tokens).last_hidden_state  # (B, T, H)
+            if self.layer is None:
+                hidden = self.model(**tokens).last_hidden_state  # (B, T, H)
+            else:
+                hidden = self.model(**tokens, output_hidden_states=True).hidden_states[self.layer]
             mask = tokens["attention_mask"].unsqueeze(-1).to(hidden.dtype)  # (B, T, 1)
             pooled = (hidden * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
             out.append(pooled.float().cpu().numpy())

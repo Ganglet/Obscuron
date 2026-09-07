@@ -40,6 +40,9 @@ def main() -> None:
     parser.add_argument("--release", default="R207")
     parser.add_argument("--model", choices=["genos-m", "esm2"], default="esm2")
     parser.add_argument("--batch-size", type=int, default=None)
+    parser.add_argument("--layer", type=int, default=None,
+                        help="genos-m only: hidden_states index to pool instead of the last layer "
+                             "(e.g. 9 -- see docs/experiment_log.md, layer 12/last is near chance)")
     args = parser.parse_args()
 
     out_dir = PROC_ROOT / f"gtdb_{args.release}"
@@ -72,8 +75,8 @@ def main() -> None:
 
     seqs = [seq_by_id[pid] for pid in sample["protein_id"]]
 
-    print(f"loading {args.model}...", flush=True)
-    embedder = load_embedder(args.model)
+    print(f"loading {args.model}" + (f" (layer {args.layer})" if args.layer is not None else "") + "...", flush=True)
+    embedder = load_embedder(args.model, layer=args.layer)
     kwargs = {} if args.batch_size is None else {"batch_size": args.batch_size}
 
     print(f"embedding {len(seqs)} sequences...", flush=True)
@@ -82,7 +85,8 @@ def main() -> None:
     elapsed = time.time() - t0
     print(f"embedded {len(seqs)} sequences in {elapsed:.0f}s -> shape {vectors.shape}", flush=True)
 
-    npy_path = out_dir / f"{args.model}_panel_embeddings.npy"
+    layer_suffix = f"_L{args.layer}" if args.layer is not None else ""
+    npy_path = out_dir / f"{args.model}_panel_embeddings{layer_suffix}.npy"
     manifest_path = out_dir / f"{args.model}_panel_embeddings_manifest.csv"
     np.save(npy_path, vectors)
     sample.to_csv(manifest_path, index=False)
