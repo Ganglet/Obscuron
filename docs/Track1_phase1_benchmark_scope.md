@@ -37,7 +37,7 @@ The choice is driven by **embedding temporal leakage**, not just gap length. Ret
 - [x] T₀/T₁ fixed and recorded (P1-D2).
 - [x] Operational definition of "dark at T₀" fixed (§3 / P1-D3).
 - [x] Verify each embedding model's exact training cutoff (feeds the leakage argument). — DONE (P1-D7: ESM-2 = UniRef50 2021_04; Genos-m = GTDB R220).
-- [ ] Add one shorter, recent robustness gap (secondary). — DEFERRED / optional (never run; a nice-to-have second-boundary robustness point, not required for the claims).
+- [x] Add one shorter, recent robustness gap (secondary). — DONE (P1-D14): Pfam 36.0→37.0 (~9mo) vs main 35.0→37.0 (~2.5yr). Dark-fraction boundary-invariant (21.40%→21.02%); positive population survives (60-genome seeded subsample: 479 vs 270 positives = 56% retained; net-new-family supply 2,383 vs 1,196 = 50%); both boundaries clear the go/no-go floor by 1–2 orders. `scripts/robustness_boundary.py` + `robustness_boundary.json`.
 
 **Cross-track hand-off:** Track 2 differences R207-reps against Pfam-35 (dark set) and against InterPro-latest (characterised set); tool = `hmmscan` at GA thresholds.
 
