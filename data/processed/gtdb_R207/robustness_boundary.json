@@ -1,0 +1,25 @@
+{
+  "family_population": {
+    "pfam35_families": 19632,
+    "pfam36_families": 20795,
+    "pfam37_families": 21979,
+    "net_new_35_37_gross": 2383,
+    "net_new_35_37_count_delta": 2347,
+    "net_new_35_36_gross": 1191,
+    "net_new_36_37_gross": 1196,
+    "retired_35_37": 36
+  },
+  "per_protein": {
+    "n_genomes": 60,
+    "n_proteins": 161822,
+    "seed": 42,
+    "dark_at_36": 34023,
+    "dark_frac_36": 0.21024953343797506,
+    "positive_36_37": 270,
+    "positive_rate_36_37": 0.0016684999567425937,
+    "dark_at_35": 34633,
+    "dark_frac_35": 0.21401910741431943,
+    "positive_35_37": 479,
+    "positive_rate_35_37": 0.0029600425158507497
+  }
+}
