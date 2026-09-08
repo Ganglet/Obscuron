@@ -1,0 +1,23 @@
+# Layer 4 -- multi-signal convergence (Phase-4 extension). Frozen pre-result
+# (anti-fishing, same rule as scorer.yaml / immune.yaml). Change only by a
+# reviewed edit stating a reason. See docs/Track1_phase4_extension_design.md,
+# decisions P4-D1.
+
+# Genomic-context novelty: for each dark gene, look at its on-contig neighbours
+# in GTDB gene-order and score the fraction that are dark-at-T0.
+genomic_context:
+  window: 5           # neighbours each side (up to 10 total)
+  min_neighbors: 4    # fewer defined neighbours (contig ends) -> context undefined, gene omitted
+
+# Convergence decision: a gene is a high-confidence novel candidate only if it
+# is above the per-axis quantile cut on BOTH the EVT and the context axis.
+convergence:
+  quantile: 0.90      # top 10% on each axis
+  top_ks: [50, 100, 500, 1000]   # for the axis-agreement Jaccard (matches scorer.yaml)
+
+seed: 42              # frozen Phase-1 panel seed
+
+# Signals combined (this run): Layer-1 ESM-2 EVT novelty + genomic-context.
+# Optional third axis = Genos-m per-query novelty (needs a cloud re-score; only
+# the held-out-family AUROC exists so far, P2-D11) -- not required for the
+# convergence claim, foldable in later.
