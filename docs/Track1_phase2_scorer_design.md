@@ -2,7 +2,7 @@
 
 **Phase:** 2 — Calibrated Novelty Scoring (Layer 1)
 **Track:** 1 — Methodology, Design & Analysis
-**Status:** In progress
+**Status:** COMPLETE — scorer validated (held-out-family AUROC 0.962 at layer-22, P2-D9); Precision@K inversion = selection-bias finding (P2-D6); Genos-m comparison arm done (P2-D11). PHASE 2 CLOSED.
 **Branch:** `phase-2-track-1`
 
 ---

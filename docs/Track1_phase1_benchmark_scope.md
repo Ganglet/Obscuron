@@ -66,7 +66,7 @@ Specification (P1-D13). Overriding principle: **everything identical across the 
 
 ## 3. Positive-label size estimate + go/no-go gate
 
-**Status:** PROXY PASSED — gate = **GO** (P1-D3, P1-D5). Definitive count deferred to the Week-2 hmmscan.
+**Status:** GATE PASSED = **GO** — proxy (P1-D3, P1-D5) and the definitive count both done: 1,341,100 proteins → 297,798 dark → **4,138 positives** (0.31%, 41–83× the floor; P1-D8/D12).
 
 **Operational definition (P1-D3):** sequences = GTDB rep-proteins; dark-at-T₀ = no Pfam-35 hit at GA threshold; characterised-by-T₁ = now hits a family new since T₀ (Pfam-37/InterPro-latest); positive = dark ∧ characterised; still-dark = *unlabelled*, not a true negative; GTDB taxonomy is the sequence source, not the function signal.
 
@@ -81,7 +81,7 @@ Specification (P1-D13). Overriding principle: **everything identical across the 
 
 ## 4. Systematic literature search
 
-**Status:** DONE (first pass) — see P1-D11. Novelty claim narrowed and now defensible; re-run before submission.
+**Status:** DONE — see P1-D11 (first pass) + P4-D3 (pre-submission re-run, 2026-09-07: claim survives, sharpened, new citations identified). Refresh once more at final submission.
 
 Searched web + arXiv + PubMed + bioRxiv for {open-set recognition, novelty/anomaly detection, EVT calibration} × {protein/genomic FM embeddings, metagenomics, microbial dark matter}.
 
@@ -96,13 +96,13 @@ Differentiators: novelty-not-annotation (vs HiFi-NN) · formal EVT calibration (
 
 - [x] Search run; closest prior art + differentiators recorded (P1-D11).
 - [x] Novelty claim narrowed to a defensible statement.
-- [ ] Re-run immediately before submission (Phase 4). — PENDING (correctly): a Phase-4 pre-submission task, not yet due.
+- [x] Re-run immediately before submission (Phase 4). — DONE (P4-D3, 2026-09-07): claim survives, sharpened. New must-cite neighbours: conformal-calibrated ANNOTATION (Nat Commun 2024 "Functional protein mining with conformal guarantees"; CPEC PLOS CB 2024) → the "not annotation" qualifier is now load-bearing; LAFA (2026 longitudinal benchmark) → leakage-control is our edge not temporal-validation; REMME/REBEAN (NAR 2025 DNA-LM metagenomic annotation); HiFi-NN still closest. Layer-3 immune framing unpreempted. Refresh once more at actual submission.
 
 ---
 
 ## 5. Documentation & reproducibility standards
 
-**Status:** in progress.
+**Status:** DONE — repo structure, provenance/subset standard (P1-D4), manifest/labels, seeds + version-controlled configs, and branch convention all in place (all boxes below closed).
 
 **Provenance & subsetting standard (P1-D4):** raw reproducible public data (GTDB FASTAs) is **never warehoused** — the pipeline streams needed sequences from the public mirror and persists only *derived* artifacts (embeddings, dark/characterised labels, manifest with source URLs + checksums). The benchmark is a **principled stratified taxonomic subset** (required for local compute — the full set is ~10⁸ proteins; sampling design documented to avoid taxonomic bias). Defer R232 proteins (application-time) and `nt_reps`/`genomes`; lifecycle-expiry on any S3 staging.
 

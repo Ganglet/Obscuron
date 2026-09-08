@@ -3,7 +3,7 @@
 
 Track 1 analysis: reads the frozen result schema (docs/Track2_Phase2_scoring_handoff.md),
 writes the paper figures to figures/ and a markdown summary. Runs against real Track-2
-output or the mock (scripts/mock_scorer_results.py) for development.
+output (the frozen result schema).
 
     uv run python scripts/analyze_scorer_results.py --arm esm2
 """
