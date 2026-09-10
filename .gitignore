@@ -2,6 +2,9 @@
 Paper/
 paper_draft/
 
+# Local AWS credentials/keys for the Genos-m cloud run — never commit
+.aws-genos-m/
+
 # Manuscript drafts — working copy, not ready for the public repo
 paper_draft/
 
