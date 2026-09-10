@@ -139,7 +139,21 @@ drivers `scripts/run_convergence.py` + `scripts/compute_composition_novelty.py`,
 no GPU / no re-embed. Result: the three axes are largely independent (genomic context
 orthogonal to both; evt~composition moderate +0.26) so convergence is genuine
 multi-evidence, and every axis points to the unexplored frontier (all deplete near-known
-positives; 108-gene triple-convergent set = 3.4× beyond chance). With Layers 1, 3, and 4
-(+ Layer 5 partial via the composition axis) built + the benchmark + the Genos-m
-comparison + the lit-search re-run, ALL TECHNICAL WORK IS COMPLETE. Optional/cloud-gated:
-Genos-m as a 4th axis (wired via `--extra-axis`), fuller Layer 5, Layer 2 structural fusion.
+positives; 108-gene triple-convergent set = 3.4× beyond chance).
+
+## Additional Phase-4 layers built (P4-D5, P4-D6)
+
+Beyond the Layer-4 extension, the two remaining blueprint layers were also built, so all
+five are now done:
+- **Layer 5 — statistical coding-structure discrimination (P4-D5).** `darkmatter/statistical/`
+  (codon-position base bias + k-mer entropy + shuffle/Markov-1 nulls). Coding-vs-noise AUROC
+  **0.94** on all 34,138 dark genes → the dark matter is genuinely coding, not spurious ORFs.
+- **Layer 2 — structure-aware embedding via ProstT5 (P4-D6).** `darkmatter/embeddings/prostt5.py`
+  (ProtT5-XL/3Di encoder, the light ESMFold substitute §9). Held-out-family AUROC **0.960**
+  (centered, 60 largest families) — a strong family separator, just below the sequence LM
+  (ESM-2 0.99) and well above the genomic FM (Genos-m 0.74). Scoped to 60 families because
+  a 1.5B T5 encoder on MPS is slow (the blueprint's Layer-2 compute wall); full 300 = cloud.
+
+**Phase 4 = ALL FIVE BLUEPRINT LAYERS BUILT.** ALL TECHNICAL WORK COMPLETE; only the
+manuscript remains. Optional/cloud-gated: ProstT5 at full 300-family scale + as a 4th
+convergence axis, Genos-m as a convergence axis, true-intergenic Layer-5 controls.
