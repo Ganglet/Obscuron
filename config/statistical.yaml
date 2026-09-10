@@ -1,0 +1,17 @@
+# Layer 5 -- statistical coding-structure discrimination (Phase-4). Frozen pre-result
+# (anti-fishing). See docs/Track1_phase4_extension_design.md, decision P4-D5.
+
+# Codon-position base bias: the primary coding-structure signal (from nucleotide CDS).
+codon_position_bias:
+  min_nt_len: 30      # shorter genes can't estimate three positional distributions
+
+# Amino-acid k-mer entropy (secondary signal).
+kmer_entropy:
+  k: 3
+
+# Control group (the null): each real gene vs its own shuffled + Markov-1 surrogate.
+nulls: [shuffle, markov1]   # shuffle destroys order; markov1 keeps di-symbol freq, not frame
+# NOTE: true intergenic controls need full genome assemblies (not fetched, P1-D4);
+# shuffle + Markov-1 are the available, standard substitutes.
+
+seed: 42

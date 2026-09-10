@@ -1,0 +1,14 @@
+{
+  "n_genes": 34138,
+  "seed": 42,
+  "cpbb": {
+    "real_median": 0.07210331524885846,
+    "shuffle_median": 0.011190129481658716,
+    "markov1_median": 0.010831468541468988
+  },
+  "coding_vs_noise_auroc": {
+    "real_vs_shuffle": 0.9394834689482757,
+    "real_vs_markov1": 0.9415367791848671
+  },
+  "aa_entropy_k3_median": 7.188818690495863
+}

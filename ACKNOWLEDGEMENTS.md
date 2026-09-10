@@ -20,17 +20,21 @@ language model," *Science* 379, 1123–1130 (2023). `github.com/facebookresearch
 Leakage-clean headline embedding arm (UniRef50 2021_04 cutoff predates the T0
 snapshot) and the protein-level baseline for the genome-vs-protein comparison.
 
-## Structure prediction (extension, Layer 2 — not yet built)
+## Structure prediction (Layer 2 — built via ProstT5)
+
+**ProstT5** — structure-aware protein language model (bilingual amino-acid / Foldseek-3Di).
+The Layer-2 arm actually built: used encoder-only as the lightweight substitute for full
+3-D folding, giving a structure-informed embedding on the same held-out-family benchmark
+(P4-D6). Heinzinger, Weissenow, Sanchez, Henkel, Mirdita, Steinegger & Rost, "Bilingual
+language model for protein sequence and structure," *NAR Genomics and Bioinformatics* 6(4),
+lqae150 (2024).
 
 **ESMFold** — end-to-end structure prediction from sequence
-Lin et al. 2023 (as above). Reserved for a small, high-priority candidate subset
-(memory-constrained on 8GB VRAM).
+Lin et al. 2023 (as above). The heavier full-folding alternative — not used; ProstT5's
+encoder embedding was the memory-feasible substitute on the available hardware (§9).
 
-**ProstT5** — structure-aware protein language model (bilingual sequence/3Di)
-Heinzinger et al. 2023. Lightweight substitute for full folding.
-
-**Foldseek** — fast structural search
-van Kempen et al. 2024, *Nature Biotechnology* 42, 243–246.
+**Foldseek** — fast structural search; its 3Di structural alphabet is the target ProstT5
+was trained to translate into. van Kempen et al. 2024, *Nature Biotechnology* 42, 243–246.
 
 ## Methods referenced (no source code used)
 
@@ -60,6 +64,14 @@ selection tractable in 1280-dimensional embedding space:
 Ji & Dasgupta, "Real-Valued Negative Selection Algorithm with Variable-Sized
 Detectors," in Deb, K. & Tari, Z. (eds.) *GECCO 2004*, Part I, LNCS vol. 3102,
 pp. 287–298, Springer (2004).
+
+**Coding-structure statistics** — the statistical-regularity basis for Layer 5
+(`src/darkmatter/statistical/`): codon-position composition bias distinguishes
+protein-coding DNA from non-coding sequence and shuffled/Markov nulls (P4-D5):
+Fickett, "Recognition of protein coding regions in DNA sequences," *Nucleic Acids
+Research* 10(17), 5303–5318 (1982). The blueprint §4 frames this as the
+computational-linguistics parallel — statistical regularity as evidence of authentic
+coding structure.
 
 ## Software tools
 
@@ -101,11 +113,16 @@ cleared the gate by 41–83×, P1-D5).
 - "Detecting Anomalous Proteins Using Deep Representations," *NAR Genomics and Bioinformatics* 6(1), 2024 — embedding-based protein anomaly detection.
 - Zhou et al., "The CAFA challenge reports improved protein function prediction and new functional annotations for hundreds of genes through experimental screens," *Genome Biology* 20, 244 (2019) — the community precedent that temporal-holdout function-prediction benchmarking is not itself novel; Obscuron's retrospective contribution is the leakage control (P1-D7), not the holdout design.
 
-## Closest prior art (Phase-1 literature search, P1-D11)
+## Closest prior art (literature search, P1-D11 + pre-submission re-run P4-D3)
 
 - Ayres, Munsamy et al., "Annotating the microbial dark matter with HiFi-NN," *iScience* 2025 (PMC12148589) — closest by target; annotates dark matter to EC numbers over ESM-2 650M embeddings with a heuristic kNN confidence. Obscuron differs: open-set **novelty** (not annotation) with formal EVT calibration and a leakage-controlled retrospective benchmark.
 - "DeepVirus" / "Illuminating the Virosphere's Dark Matter using Hierarchical Deep Learning," *bioRxiv* 2025 — open-set recognition + protein FM + genome context for novel viral groups. Obscuron differs: microbial **functional** dark matter (not viral lineage), EVT calibration (not hypothesis testing).
 - Ma et al., "Predicting functions of uncharacterized gene products from microbial communities" (FUGAsseM), *Nature Biotechnology* 2025 — genomic-context function prediction with temporal-holdout validation. Establishes retrospective validation is *not itself novel*; Obscuron's retrospective contribution is the leakage control (P1-D7).
+
+**Added by the pre-submission re-run (P4-D3):**
+- "Functional protein mining with conformal guarantees," *Nature Communications* 2024, and CPEC (conformal, FDR-controlled EC annotation), *PLOS Computational Biology* 2024 — establish conformal-calibrated protein **annotation**. Obscuron differs by calibrating open-set **novelty** (distance beyond known space), not the annotation decision — so the "not annotation" distinction is load-bearing.
+- LAFA, "A Framework for Reproducible Longitudinal Assessment of Protein Function Annotation Models," 2026 — a temporal/longitudinal function-annotation benchmark; reinforces that temporal validation is not itself novel, the leakage control is.
+- "Deciphering enzymatic potential in metagenomic reads through DNA language models" (REMME/REBEAN), *Nucleic Acids Research* 2025 — a genomic-FM metagenomic annotator (reference-free EC annotation, not calibrated novelty).
 
 Full source list: blueprint §12 (`Microbial_Dark_Matter_Blueprint_Updated.pdf`, repo root).
 Every non-obvious design decision referencing these sources — snapshot boundary,

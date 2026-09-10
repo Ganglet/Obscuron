@@ -171,6 +171,14 @@ def main() -> None:
         d = np.load(npz_path, allow_pickle=True)
         layers = {li: d[f"L{li}"] for li in want}
         families = [str(x) for x in d["families"]]
+        if args.max_families:
+            # match a capped run (e.g. Rayyan's 300-largest-family Genos-m eval) so the
+            # ESM-2 comparison is WITHIN the same family set, not cross-eval (P2-D9 lesson)
+            top = pd.Series(families).value_counts().head(args.max_families).index
+            mask = pd.Series(families).isin(top).values
+            layers = {li: layers[li][mask] for li in want}
+            families = [f for f, m in zip(families, mask) if m]
+            print(f"capped to {args.max_families} largest families", flush=True)
         print(f"eval-only: {layers[want[0]].shape[0]} reference embeddings, "
               f"{len(set(families))} families (from {npz_path.name})", flush=True)
     else:

@@ -142,8 +142,8 @@ paper figures. Emit them verbatim, one set per arm (`{arm}` ∈ `esm2`, `genos_m
 The harness **recomputes** Precision@K + lift from `ranked.csv` (both the `novelty`
 and `distance` rankings), so those need not be pre-tabulated — just emit the ranked
 queries with both columns. `results/` is gitignored (derived artifacts, P1-D4).
-Track 1 develops the harness against `scripts/mock_scorer_results.py` until the real
-run lands.
+Track 1 developed the harness against a schema-correct mock until Track 2's real run
+landed (P2-D6); the mock scaffold has since been removed.
 
 ---
 
