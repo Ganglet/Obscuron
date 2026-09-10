@@ -30,6 +30,17 @@ esm2:
   quantize_below_vram_gb: 0.0   # comfortably fits 8GB unquantized
   max_tokens: 1024
 
+prostt5:
+  # Layer 2 structure-aware arm (blueprint §6/§9): ProtT5-XL fine-tuned on 3Di,
+  # used encoder-only so its footprint is ~half the full enc-dec checkpoint. The
+  # light substitute for ESMFold — no 3-D folding, runs like a normal embedder.
+  hf_repo: "Rostlab/ProstT5"          # tokenizer + config
+  weights_repo: "Rostlab/ProstT5_fp16"  # fp16 pytorch_model.bin (~5.5GB); transformers v5
+  weights_file: "pytorch_model.bin"     #   is safetensors-only, so we load the .bin manually
+  vram_bf16_gb: 2.5              # encoder-only, fp16
+  quantize_below_vram_gb: 0.0   # fits unquantized on the M1 / 4060
+  max_tokens: 1024
+
 device_policy:
   prefer: ["cuda", "mps", "cpu"]
   # bitsandbytes has no MPS support — Genos-m on Apple Silicon needs either
