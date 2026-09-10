@@ -182,7 +182,11 @@ Three novelty axes of different kinds — Layer-1 EVT embedding novelty, an embe
 | genomic-context ~ composition | +0.01 | independent |
 | EVT ~ composition | +0.26 | moderate (ESM-2 encodes some composition) |
 
-The axes are largely independent, so convergence is genuine multi-evidence, not one signal restated. The 3-way convergent set is **108 genes = 3.4× more than chance would give** under independence, and every axis *depletes* the near-known positives (composition-top lift 0.26×) — so the convergent set is the high-confidence frontier the annotation pipeline leaves behind. Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4](docs/problems_and_decisions.md).
+The axes are largely independent, so convergence is genuine multi-evidence, not one signal restated. The 3-way convergent set is **108 genes = 3.4× more than chance would give** under independence, and every axis *depletes* the near-known positives (composition-top lift 0.26×) — so the convergent set is the high-confidence frontier the annotation pipeline leaves behind.
+
+![Layer 4 multi-signal convergence](results/figures/layer4_convergence_summary.png)
+
+Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4](docs/problems_and_decisions.md).
 
 ### 6. Layer 5 coding-structure — the dark genes are genuinely coding
 
@@ -194,6 +198,8 @@ Codon-position base bias + k-mer entropy on all 34,138 dark genes, tested agains
 | **Coding-vs-noise AUROC** (real vs shuffle / vs Markov-1) | **0.94 / 0.94** |
 
 The dark matter carries genuine reading-frame structure, i.e. these are real ORFs and not spurious calls — a direct answer to the non-coding-artifact risk, and evidence the benchmark rests on real coding sequences.
+
+![Layer 5 coding-structure vs nulls](results/figures/layer5_coding_structure_summary.png)
 
 > **Honest scope:** true intergenic controls need full genome assemblies (not fetched); shuffled + Markov-1 nulls are the standard available substitutes. Details: [`docs/problems_and_decisions.md` § P4-D5](docs/problems_and_decisions.md).
 
@@ -208,6 +214,8 @@ ProstT5's structure-informed encoder, scored with the same held-out-family proto
 | Genos-m layer 9 (genome, 300-fam ref) | 0.739 / 0.795 |
 
 Structure-aware embedding is a strong Pfam-family separator, just below the pure sequence LM and well above the genomic FM — sensible, since Pfam families are homology-defined so a sequence model is naturally strong; structure is complementary, not superior, for family separation.
+
+![Layer 2 ProstT5 vs sequence and genomic arms](results/figures/layer2_prostt5_summary.png)
 
 > **Honest scope:** scoped to 60 families because a 1.5B T5 encoder on MPS is slow (the blueprint's Layer-2 compute wall); the full 300-family run is a cloud afternoon. Details: [`docs/problems_and_decisions.md` § P4-D6](docs/problems_and_decisions.md).
 
