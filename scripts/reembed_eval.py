@@ -112,36 +112,76 @@ def auroc(y: np.ndarray, s: np.ndarray) -> float:
     return np.nan if np_ == 0 or nn_ == 0 else (ranks[pos].sum() - np_ * (np_ + 1) / 2) / (np_ * nn_)
 
 
-def knn(Q, R, k, self_offset=None, chunk=2048):
-    """Mean cosine distance to the k nearest rows of R, chunked over Q to bound memory
-    (avoids a 15k x 15k matrix). If self_offset is set, Q is the slice
-    R[self_offset : self_offset+len(Q)] and each row's self-match is excluded."""
-    out = []
-    for a in range(0, len(Q), chunk):
-        d = 1.0 - Q[a:a + chunk] @ R.T
-        if self_offset is not None:
-            rows = np.arange(d.shape[0])
-            d[rows, self_offset + a + rows] = np.inf
-        d.sort(axis=1)
-        kk = min(k, d.shape[1] - (1 if self_offset is not None else 0))
-        out.append(d[:, :kk].mean(1))
-    return np.concatenate(out)
+def _topm_neighbors(vn: np.ndarray, m: int, chunk: int = 2048) -> tuple[np.ndarray, np.ndarray]:
+    """For every row in vn, its top-m nearest OTHER rows (self excluded), by
+    cosine similarity. Chunked over query rows so peak memory is chunk x N,
+    never the full N x N matrix (this is the same memory discipline the old,
+    now-removed per-family knn() loop used -- "avoids a 15k x 15k matrix" --
+    just paid once for the whole reference instead of once per held-out
+    family, which was the O(F * N^2) bottleneck this replaces). Returns
+    (indices, similarities), each (N, m); m must comfortably exceed the
+    largest family size so that filtering out one held-out family still
+    leaves >= K neighbours.
+    """
+    n = len(vn)
+    idx_out = np.empty((n, m), dtype=np.int32)
+    sim_out = np.empty((n, m), dtype=np.float32)
+    for a in range(0, n, chunk):
+        b = min(a + chunk, n)
+        block = vn[a:b] @ vn.T  # (b-a, n)
+        rows = np.arange(b - a)
+        block[rows, a + rows] = -np.inf  # exclude self
+        mm = min(m, n - 1)
+        top_idx = np.argpartition(block, -mm, axis=1)[:, -mm:]
+        top_sim = np.take_along_axis(block, top_idx, axis=1)
+        order = np.argsort(-top_sim, axis=1)
+        idx_out[a:b, :mm] = np.take_along_axis(top_idx, order, axis=1)
+        sim_out[a:b, :mm] = np.take_along_axis(top_sim, order, axis=1)
+        if mm < m:
+            idx_out[a:b, mm:] = -1
+            sim_out[a:b, mm:] = -np.inf
+    return idx_out, sim_out
 
 
-def heldout_auroc(vectors, families, center, seed):
+def _knn_dist_excluding(idx: np.ndarray, sim: np.ndarray, exclude_family: np.ndarray, k: int) -> np.ndarray:
+    """Mean cosine distance to the k nearest neighbours, per row, after
+    dropping any precomputed neighbour that falls in exclude_family (a bool
+    mask over the full reference, indexed by idx's values)."""
+    bad = exclude_family[idx.clip(min=0)] | (idx < 0)
+    sim_masked = np.where(bad, -np.inf, sim)
+    order = np.argsort(-sim_masked, axis=1)[:, :k]
+    top = np.take_along_axis(sim_masked, order, axis=1)
+    return 1.0 - top.mean(axis=1)
+
+
+def heldout_auroc(vectors, families, center, seed, top_m: int = 500):
+    """Held-out-family AUROC (P2-D4), same math as the original per-family loop
+    but each point's neighbour search is done ONCE against the full reference
+    (chunked, top-m kept) instead of once per family (was O(F * N^2) total
+    work; now O(N^2) once + O(F * N) cheap filtering). top_m must exceed the
+    largest family size; 500 comfortably covers this benchmark's families.
+
+    center uses the GLOBAL mean (not the per-fold, family-excluded mean): P2-D9
+    already established centering's effect on this AUROC is negligible (33:
+    0.786->0.783, 22: 0.962->0.961), and removing a handful of family members
+    from a >10k-row reference shifts the mean by a negligible amount anyway --
+    so this is a justified approximation, not a silent behaviour change.
+    """
+    del seed  # unused now that nothing here is sampled; kept for call-site compatibility
     fams = np.array(families)
-    rng = np.random.default_rng(seed)
     keep = pd.Series(fams).groupby(fams).transform("size").values >= MIN_MEMBERS
     v, f = vectors[keep], fams[keep]
+
+    mu = v.mean(0, keepdims=True) if center else 0.0
+    vn = v - mu
+    vn = vn / np.clip(np.linalg.norm(vn, axis=1, keepdims=True), 1e-12, None)
+    idx, sim = _topm_neighbors(vn, top_m)  # the one O(N^2) cost, paid once
+
     scores = []
     for F in np.unique(f):
         is_f = f == F
-        ref_raw = v[~is_f]
-        mu = ref_raw.mean(0, keepdims=True) if center else 0.0
-        prep = lambda x: (lambda z: z / np.clip(np.linalg.norm(z, axis=1, keepdims=True), 1e-12, None))(x - mu)
-        ref = prep(ref_raw)
-        novel = knn(prep(v[is_f]), ref, K)
-        known = knn(ref, ref, K, self_offset=0)
+        novel = _knn_dist_excluding(idx[is_f], sim[is_f], is_f, K)
+        known = _knn_dist_excluding(idx[~is_f], sim[~is_f], is_f, K)
         a = auroc(np.r_[np.ones(len(novel)), np.zeros(len(known))], np.r_[novel, known])
         if not np.isnan(a):
             scores.append(a)
