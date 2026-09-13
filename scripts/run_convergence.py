@@ -4,9 +4,10 @@ novelty axes (SS4 principle: confident novelty only where independent lines agre
 
 Axis 1 (always): Layer-1 ESM-2 EVT embedding novelty (esm2_novelty_scores.csv).
 Axis 2 (always): genomic-context novelty (contig gene-order; embedding-free).
-Axis 3+ (optional, --extra-axis): any per-query novelty CSV (protein_id + a score
-    column) -- e.g. composition_novelty.csv now, or a cloud-produced
-    genos-m_novelty_scores.csv later. Same wiring for both.
+Axis 3+ (optional, --extra-axis, repeatable): any per-query novelty CSV
+    (protein_id + a score column) -- e.g. composition_novelty.csv, or a
+    cloud-produced genos-m_novelty_scores.csv. Pass --extra-axis multiple
+    times to add several at once (e.g. composition + genos-m together).
 
 Reports, on the shared query set:
   1. Pairwise independence of the axes (Spearman + top-K Jaccard) -- the
@@ -17,6 +18,9 @@ Reports, on the shared query set:
 Frozen params in config/convergence.yaml. Usage:
     uv run python scripts/run_convergence.py
     uv run python scripts/run_convergence.py --extra-axis data/processed/gtdb_R207/composition_novelty.csv
+    uv run python scripts/run_convergence.py \
+        --extra-axis data/processed/gtdb_R207/composition_novelty.csv \
+        --extra-axis results/genos-m_novelty_scores.csv
 """
 
 from __future__ import annotations
@@ -53,9 +57,10 @@ def main() -> None:
     ap.add_argument("--min-neighbors", type=int, default=4)
     ap.add_argument("--quantile", type=float, default=0.90)
     ap.add_argument("--top-ks", default="50,100,500,1000")
-    ap.add_argument("--extra-axis", default=None,
-                    help="CSV (protein_id + one score column) to add as a 3rd+ axis")
-    ap.add_argument("--extra-name", default=None, help="label for the extra axis")
+    ap.add_argument("--extra-axis", action="append", default=[],
+                    help="CSV (protein_id + one score column) to add as a 3rd+ axis; repeatable")
+    ap.add_argument("--extra-name", action="append", default=[],
+                    help="label(s) for the extra axis/axes, same order as --extra-axis")
     args = ap.parse_args()
     top_ks = [int(x) for x in args.top_ks.split(",")]
 
@@ -67,13 +72,13 @@ def main() -> None:
     scores["context_novelty"] = scores["protein_id"].map(context)
 
     axis_cols = {"evt": "evt_novelty_score", "context": "context_novelty"}
-    if args.extra_axis:
-        extra = pd.read_csv(args.extra_axis)
+    for i, extra_path in enumerate(args.extra_axis):
+        extra = pd.read_csv(extra_path)
         score_col = [c for c in extra.columns if c != "protein_id"][0]
-        name = args.extra_name or score_col.replace("_novelty", "")
+        name = args.extra_name[i] if i < len(args.extra_name) else score_col.replace("_novelty", "").replace("genos_m", "genos-m")
         scores = scores.merge(extra[["protein_id", score_col]], on="protein_id", how="left")
         axis_cols[name] = score_col
-        print(f"extra axis '{name}' from {Path(args.extra_axis).name} ({score_col})", flush=True)
+        print(f"extra axis '{name}' from {Path(extra_path).name} ({score_col})", flush=True)
 
     merged = scores.dropna(subset=list(axis_cols.values())).reset_index(drop=True)
     is_pos = merged["is_positive"].astype(str).eq("True").to_numpy()

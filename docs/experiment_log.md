@@ -83,3 +83,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: n_detectors sweep [1000, 5000, 10000, 20000], margin sweep [0.5, 1.0, 1.5, 2.0], pca sweep [0, 50, 100], alpha sweep [np.float64(0.01), np.float64(0.05), np.float64(0.1)], base config from E:\dark_matter\config\immune.yaml
 - Result: detector-count AUROC [0.5919805228876249, 0.7365232906269299, 0.8322199805025746, 0.862368882894188]; margin AUROC [0.6269443604042476, 0.628536708964332, 0.6273491091682547, 0.6284035696557208]; pca AUROC [0.5325393100617686, 0.628536708964332, 0.6169832900230413]; full-scale (14138 queries) flag rate dark=0.1195 positive=0.2008 dark_negative=0.0858; convergence with Layer-1 rho=0.485, top-K jaccard={'50': 0.0, '100': 0.005025125628140704, '500': 0.059322033898305086, '1000': 0.11982082866741321}
 - Next: report to Track 1 against P3-D6's acceptance sanity + fold into manuscript (Phase 4)
+
+## 2026-09-14 -- full 903-family genos-m eval + genos-m as 4th convergence axis (cloud, g5.xlarge)
+- Commit: pending
+- Config: layers 12,9; O(N^2)-fixed reembed_eval.py; embed_genos_m_dark_queries.py on all 34,138 dark queries; run_convergence.py --extra-axis composition_novelty.csv --extra-axis genos-m_novelty_scores.csv
+- Result: full-903-family AUROC layer 9 raw=0.665 mean/0.703 median (vs 300-family-capped 0.739/0.795); 4-axis convergence on 31,712 queries -- genos-m~evt rho=0.15, genos-m~context rho=-0.05, genos-m~composition rho=-0.32; genos-m-top-10% positive-rate lift=1.30x (the only axis that enriches, likely leakage-driven per P1-D7/P2-D7); 4-way convergent set n=35, lift=0.94x
+- Next: report to Track 1 -- the leakage caveat on the genos-m lift needs to land in the manuscript alongside the number, not just the number; fold corrected full-scale genos-m AUROC into any place the 300-family estimate was cited

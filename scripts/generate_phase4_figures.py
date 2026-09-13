@@ -60,24 +60,27 @@ def layer4_convergence() -> None:
     ax1.axvline(0, color=REF, lw=1)
     ax1.set_xlabel("Spearman rho")
     ax1.set_title("Pairwise axis independence")
-    ax1.set_xlim(-0.1, 0.4)
+    lo = min(-0.1, min(rhos) - 0.05)
+    hi = max(0.4, max(rhos) + 0.05)
+    ax1.set_xlim(lo, hi)
+    ax1.tick_params(axis="y", labelsize=8)
 
-    axes_order = ["evt", "context", "composition"]
+    axes_order = list(d["axes"])
     base = d["base_positive_rate"]
     lifts = [d["single_axis_top"][a]["lift"] for a in axes_order]
     ns = [d["single_axis_top"][a]["n"] for a in axes_order]
     conv_lift = d["convergent_all"]["lift"]
     conv_n = d["convergent_all"]["n"]
-    labels2 = [f"{a}\n(n={n})" for a, n in zip(axes_order, ns)] + [f"3-way\n(n={conv_n})"]
+    labels2 = [f"{a}\n(n={n})" for a, n in zip(axes_order, ns)] + [f"{len(axes_order)}-way\n(n={conv_n})"]
     vals = lifts + [conv_lift]
-    colors2 = [HEADLINE] * 3 + [THIRD]
-    ax2.bar(labels2, vals, color=colors2)
+    bar_colors = [BASELINE if v > 1.05 else HEADLINE for v in lifts] + [THIRD]
+    ax2.bar(labels2, vals, color=bar_colors)
     ax2.axhline(1.0, color=REF, ls=":", lw=1, label="base rate")
     ax2.set_ylabel(f"positive-rate lift (base {base:.3f})")
-    ax2.set_title("Every axis depletes near-known positives")
-    ax2.tick_params(axis="x", labelsize=8)
+    ax2.set_title("Most axes deplete near-known positives")
+    ax2.tick_params(axis="x", labelsize=7)
     ax2.legend(frameon=False, fontsize=8, loc="upper right", bbox_to_anchor=(1.0, 0.93))
-    fig.suptitle("Layer 4 — multi-signal convergence (P4-D2/D4)", fontsize=11)
+    fig.suptitle(f"Layer 4 — multi-signal convergence ({len(axes_order)} axes, P4-D2/D4/D7)", fontsize=11)
     save(fig, "layer4_convergence_summary.png")
 
 
