@@ -156,7 +156,7 @@ Run on AWS (A10G) over the real 502-genome nucleotide panel — both a matched 3
 
 The genomic FM is a real signal (well above chance) but a distinctly weaker detector — and since Genos-m is the *leakage-controlled* arm (its GTDB R220 pretraining overlaps the benchmark window), it underperforms the leakage-clean protein FM even with a potential leakage advantage, so the ESM-2 headline is not a leakage artifact. A cross-model consistency also emerges: a mid-late layer beats the last layer for *both* models. Note the full-scale numbers are meaningfully lower than the matched-300 ones for both models — family-capping systematically inflates AUROC (more reference members per fold, no small/rare families dragging the average down), so **the 903-family column is the reportable headline, the 300-family column is the fair apples-to-apples comparison.**
 
-> **Honest scope:** the 300-family cap was originally used for a reasonable cloud runtime; the full 903-family Genos-m eval has since been run (2026-09-14, ~75 min on a `g5.xlarge`, ~$1.25). Details: [`docs/problems_and_decisions.md` § P2-D11, P4-D7](docs/problems_and_decisions.md).
+> **Honest scope:** the 300-family cap was originally used for a reasonable cloud runtime; the full 903-family Genos-m eval has since been run (2026-09-14, ~75 min on a `g5.xlarge`, ~$1.25). Details: [`docs/problems_and_decisions.md` § P2-D11, P4-D8](docs/problems_and_decisions.md).
 
 ### 4. Layer 3 immune self/non-self — calibration holds, moderate convergence with Layer 1
 
@@ -189,7 +189,7 @@ The first three axes are largely independent, so their convergence is genuine mu
 
 **Genos-m breaks that pattern: its top-10% novelty *enriches* for positives (lift 1.30×)** — the only axis in the whole project that points this direction.
 
-> **Honest scope, not a 4th independent line of evidence:** Genos-m's pretraining saw GTDB R220, which sits inside this benchmark's T0→T1 window — the same leakage this project controls for everywhere else (P1-D7). The 1.30× lift is more plausibly elevated familiarity with genes Genos-m partially memorised during pretraining than genuine far-from-self novelty, so it's reported as a flagged leakage artifact, not folded into the "independent lines converge" story. The 4-way convergent set (all four axes, n=35, lift 0.94×) reads close to neutral for exactly this reason — genos-m's enrichment partially cancels the other three axes' depletion. Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4/D7](docs/problems_and_decisions.md).
+> **Honest scope, not a 4th independent line of evidence:** Genos-m's pretraining saw GTDB R220, which sits inside this benchmark's T0→T1 window — the same leakage this project controls for everywhere else (P1-D7). The 1.30× lift is more plausibly elevated familiarity with genes Genos-m partially memorised during pretraining than genuine far-from-self novelty, so it's reported as a flagged leakage artifact, not folded into the "independent lines converge" story. The 4-way convergent set (all four axes, n=35, lift 0.94×) reads close to neutral for exactly this reason — genos-m's enrichment partially cancels the other three axes' depletion. Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4/D8](docs/problems_and_decisions.md).
 
 ![Layer 4 multi-signal convergence](results/figures/layer4_convergence_summary.png)
 

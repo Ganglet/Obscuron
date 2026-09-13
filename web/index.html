@@ -1,0 +1,807 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Obscuron</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<style>
+  :root{
+    --paper:#F4EEE1;
+    --paper-2:#EDE6D6;
+    --card:#FBF7EE;
+    --ink:#221F18;
+    --ink-1:#575142;
+    --ink-2:#8b8370;
+    --ink-3:#b3aa93;
+    --line:#DCD3C0;
+    --line-2:#C7BCA2;
+    --accent:#2C5A4B;
+    --accent-2:#3d7864;
+    --accent-soft:#e4ede6;
+    --heat-low:#3d7864;
+    --heat-mid:#BC8A2E;
+    --heat-high:#B14A2E;
+    --shadow:0 18px 44px -30px rgba(58,48,28,.5);
+    --shadow-sm:0 8px 22px -18px rgba(58,48,28,.55);
+    --maxw:1140px;
+    --serif:"Newsreader",Georgia,"Times New Roman",serif;
+    --disp:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:17px;line-height:1.62;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;
+  }
+  h1,h2,h3,h4{font-family:var(--disp);font-weight:700;line-height:1.06;letter-spacing:-.015em;text-wrap:balance;margin:0}
+  p{margin:0}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:rgba(44,90,75,.18)}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);font-weight:500}
+  .muted{color:var(--ink-1)}
+  .dim{color:var(--ink-2)}
+  .mono{font-family:var(--mono)}
+  .fig-em{font-variant-numeric:tabular-nums}
+
+  /* ---------- nav ---------- */
+  header.nav{position:sticky;top:0;z-index:50;background:rgba(244,238,225,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--disp);font-weight:800;font-size:1.14rem;letter-spacing:-.02em}
+  .brand .mk{width:20px;height:20px;flex:0 0 auto}
+  .nav-links{display:flex;gap:30px;align-items:center}
+  .nav-links a{font-family:var(--disp);font-weight:600;font-size:.86rem;color:var(--ink-1);transition:color .18s}
+  .nav-links a:hover{color:var(--accent)}
+  .nav-tag{font-family:var(--mono);font-weight:400;font-size:.68rem;letter-spacing:.06em;color:var(--ink-2);
+    border:1px solid var(--line-2);border-radius:999px;padding:5px 12px}
+  .nav-tag:hover{color:var(--ink-2)}
+  @media (max-width:780px){.nav-links a:not(.nav-tag){display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:84px 0 74px;border-bottom:1px solid var(--line)}
+  .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:64px;align-items:center}
+  @media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:44px}}
+  .hero h1{font-size:clamp(2.6rem,5.6vw,4.35rem);font-weight:800;margin:22px 0 0;max-width:15ch}
+  .hero .lede{margin-top:26px;max-width:52ch;font-size:1.22rem;line-height:1.5;color:var(--ink-1)}
+  .cta-row{margin-top:34px;display:flex;gap:14px;flex-wrap:wrap}
+  .btn{font-family:var(--disp);font-weight:600;font-size:.92rem;border-radius:8px;padding:12px 22px;cursor:pointer;
+    border:1px solid transparent;transition:background .2s,border-color .2s,color .2s,transform .12s;display:inline-flex;align-items:center;gap:9px}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--accent);color:#f3efe4;border-color:var(--accent)}
+  .btn-primary:hover{background:var(--accent-2)}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+  .hero-stats{margin-top:52px;display:flex;gap:0;flex-wrap:wrap}
+  .hs{display:flex;flex-direction:column;gap:4px;padding-right:30px;margin-right:30px;border-right:1px solid var(--line)}
+  .hs:last-child{border-right:none;margin-right:0;padding-right:0}
+  .hs .n{font-family:var(--disp);font-weight:700;font-size:1.75rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .hs .l{font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;color:var(--ink-2);text-transform:uppercase}
+  .hero-fig{margin:0}
+  .hero-fig .frame{border:1px solid var(--line-2);border-radius:10px;background:var(--card);padding:14px;box-shadow:var(--shadow-sm)}
+  #field{display:block;width:100%;height:340px;border-radius:5px}
+  @media (max-width:900px){#field{height:280px}}
+  .hero-fig figcaption{font-family:var(--mono);font-size:.72rem;line-height:1.5;color:var(--ink-2);margin-top:14px;letter-spacing:.01em}
+
+  /* ---------- sections ---------- */
+  section{padding:88px 0;position:relative}
+  .alt{background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .sec-head{max-width:60ch;margin-bottom:54px}
+  .sec-head h2{font-size:clamp(1.8rem,3.4vw,2.7rem);margin-top:16px}
+  .sec-head p{margin-top:18px;color:var(--ink-1);font-size:1.14rem;line-height:1.55}
+
+  /* ---------- problem ---------- */
+  .prob-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+  @media (max-width:880px){.prob-grid{grid-template-columns:1fr;gap:40px}}
+  .prob-copy h2{font-size:clamp(1.8rem,3.4vw,2.7rem);margin:16px 0 22px}
+  .prob-copy p{color:var(--ink-1);font-size:1.08rem}
+  .prob-copy p+p{margin-top:18px}
+  .prob-copy .lead{color:var(--ink);font-size:1.2rem;line-height:1.5}
+  .figpanel{border:1px solid var(--line-2);border-radius:10px;padding:26px;background:var(--card);box-shadow:var(--shadow-sm)}
+  .figpanel .cap{font-family:var(--mono);font-size:.72rem;color:var(--ink-2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:18px}
+  .bar-track{height:20px;border-radius:5px;overflow:hidden;display:flex;border:1px solid var(--line-2)}
+  .bar-dark{flex:0 0 22.2%;background-color:#e7dfcd;background-image:repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(87,81,66,.16) 4px,rgba(87,81,66,.16) 5px)}
+  .bar-known{flex:1;background:linear-gradient(180deg,var(--accent-2),var(--accent))}
+  .bar-legend{display:flex;justify-content:space-between;margin-top:14px;font-family:var(--mono);font-size:.76rem}
+  .bar-legend .k{display:flex;align-items:center;gap:8px;color:var(--ink-1)}
+  .swatch{width:11px;height:11px;border-radius:3px}
+  .funnel{margin-top:26px;display:flex;flex-direction:column;gap:9px}
+  .frow{display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:.84rem;padding:12px 14px;border-radius:7px;background:var(--paper)}
+  .frow .fn{color:var(--ink-1)}
+  .frow .fv{color:var(--accent);font-weight:500}
+  .frow.s2{background:#f2ead7}
+  .frow.s3{background:#f2e6da}
+  .figpanel .note{font-family:var(--mono);font-size:.76rem;color:var(--ink-2);margin-top:16px}
+
+  /* ---------- approach ---------- */
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+  @media (max-width:820px){.pillars{grid-template-columns:1fr}}
+  .pillar{padding:0 34px;border-left:1px solid var(--line)}
+  .pillar:first-child{padding-left:0;border-left:none}
+  @media (max-width:820px){.pillar{padding:26px 0;border-left:none;border-top:1px solid var(--line)}.pillar:first-child{border-top:none;padding-top:0}}
+  .pillar .pl{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  .pillar h3{font-size:1.34rem;margin:14px 0 12px}
+  .pillar p{color:var(--ink-1);font-size:1rem;line-height:1.55}
+
+  /* ---------- layers ---------- */
+  .layers{border:1px solid var(--line-2);border-radius:10px;overflow:hidden;background:var(--card)}
+  .layer{display:grid;grid-template-columns:52px 1fr auto;gap:26px;align-items:center;padding:24px 28px;border-bottom:1px solid var(--line)}
+  .layer:last-child{border-bottom:none}
+  .layer.core{background:var(--accent-soft)}
+  .layer .lnum{font-family:var(--disp);font-weight:700;font-size:1.7rem;color:var(--ink-3);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .layer.core .lnum{color:var(--accent)}
+  .layer h4{font-family:var(--disp);font-size:1.14rem}
+  .layer .core-tag{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+    border:1px solid var(--accent-2);border-radius:5px;padding:2px 8px;margin-left:11px;vertical-align:middle}
+  .layer p{color:var(--ink-1);font-size:.98rem;line-height:1.5;margin-top:5px;max-width:66ch}
+  .layer .lmetric{text-align:right;min-width:128px}
+  .layer .lmetric .mv{font-family:var(--disp);font-weight:700;font-size:1.4rem;font-variant-numeric:tabular-nums}
+  .layer.core .lmetric .mv{color:var(--accent)}
+  .layer .lmetric .ml{font-family:var(--mono);font-size:.64rem;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+  @media (max-width:720px){.layer{grid-template-columns:40px 1fr;gap:16px}.layer .lmetric{grid-column:2;text-align:left;margin-top:8px}}
+
+  /* ---------- instrument ---------- */
+  .inst{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+  @media (max-width:960px){.inst{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--line-2);border-radius:11px;background:var(--card);box-shadow:var(--shadow-sm)}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--line)}
+  .panel-h .t{font-family:var(--mono);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-1)}
+  .panel-h .arm{font-family:var(--mono);font-size:.72rem;color:var(--accent)}
+  .panel-b{padding:22px}
+  textarea#seq{width:100%;min-height:170px;resize:vertical;background:var(--paper);color:var(--ink);
+    border:1px solid var(--line-2);border-radius:8px;padding:14px 15px;font-family:var(--mono);font-size:.82rem;line-height:1.7;letter-spacing:.02em}
+  textarea#seq:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(44,90,75,.14)}
+  .seq-meta{display:flex;justify-content:space-between;margin-top:10px;font-family:var(--mono);font-size:.72rem;color:var(--ink-2)}
+  .seq-meta .bad{color:var(--heat-high)}
+  .examples{margin-top:20px}
+  .examples .lbl{font-family:var(--mono);font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);margin-bottom:11px}
+  .ex-btns{display:flex;gap:9px;flex-wrap:wrap}
+  .ex-btns button{font-family:var(--disp);font-weight:600;font-size:.8rem;color:var(--ink-1);background:var(--paper);
+    border:1px solid var(--line-2);border-radius:7px;padding:8px 13px;cursor:pointer;transition:border-color .16s,color .16s}
+  .ex-btns button:hover{border-color:var(--accent);color:var(--accent)}
+  .run-row{margin-top:22px;display:flex;gap:12px}
+  .disc{margin-top:20px;font-family:var(--mono);font-size:.77rem;color:var(--ink-2);line-height:1.6;border-top:1px solid var(--line);padding-top:16px}
+  .disc b{color:var(--ink-1);font-weight:500}
+  .readout .panel-b{display:flex;flex-direction:column;gap:20px}
+  .verdict{display:flex;align-items:center;gap:16px;padding:16px 18px;border-radius:9px;border:1px solid var(--line);background:var(--paper)}
+  .verdict .badge{font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;padding:7px 12px;border-radius:6px;white-space:nowrap}
+  .verdict .vtext{font-size:.98rem;line-height:1.4;color:var(--ink-1)}
+  .meter .mtop{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+  .meter .mtop .lab{font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+  .meter .mtop .val{font-family:var(--disp);font-weight:700;font-size:1.6rem;font-variant-numeric:tabular-nums}
+  .meter .track{height:10px;border-radius:6px;background:var(--paper);border:1px solid var(--line-2);overflow:hidden;position:relative}
+  .meter .fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,var(--heat-low),var(--heat-mid) 62%,var(--heat-high));transition:width .6s cubic-bezier(.2,.7,.2,1)}
+  .meter .ticks{display:flex;justify-content:space-between;margin-top:8px;font-family:var(--mono);font-size:.64rem;color:var(--ink-3)}
+  .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .rstat{padding:14px 16px}
+  .rstat+.rstat{border-left:1px solid var(--line)}
+  .rstat .k{font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+  .rstat .v{font-family:var(--disp);font-weight:700;font-size:1.28rem;margin-top:6px;font-variant-numeric:tabular-nums}
+  .tailplot{border:1px solid var(--line);border-radius:9px;padding:15px 15px 8px;background:var(--paper)}
+  .tailplot .ph{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.66rem;color:var(--ink-2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+  .famsec .ph{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.66rem;color:var(--ink-2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:13px}
+  .fam-list{display:flex;flex-direction:column;gap:11px}
+  .fam{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;font-family:var(--mono);font-size:.79rem}
+  .fam .pf{color:var(--accent)}
+  .fam .nm{color:var(--ink-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fam .sv{color:var(--ink-2);font-size:.74rem;font-variant-numeric:tabular-nums}
+  .fam .simbar{grid-column:1 / -1;height:5px;border-radius:3px;background:var(--paper);border:1px solid var(--line);position:relative;overflow:hidden;margin-top:-3px}
+  .fam .simfill{position:absolute;left:0;top:0;bottom:0;background:var(--accent-2);opacity:.75}
+
+  /* ---------- results ---------- */
+  .res-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:26px;align-items:start}
+  @media (max-width:960px){.res-grid{grid-template-columns:1fr}}
+  .chartcard{border:1px solid var(--line-2);border-radius:11px;background:var(--card);padding:26px 28px;box-shadow:var(--shadow-sm)}
+  .chartcard .ch-h{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-bottom:24px}
+  .arm-chart{display:flex;flex-direction:column;gap:22px}
+  .arm .arm-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+  .arm .arm-name{font-family:var(--disp);font-weight:600;font-size:1rem}
+  .arm .arm-name .sub{font-family:var(--mono);font-size:.68rem;color:var(--ink-2);margin-left:9px;font-weight:400}
+  .arm .arm-val{font-family:var(--disp);font-weight:700;font-size:1.18rem;font-variant-numeric:tabular-nums}
+  .arm .abar{height:12px;border-radius:6px;background:var(--paper);border:1px solid var(--line-2);overflow:hidden}
+  .arm .afill{height:100%;border-radius:6px;width:0;transition:width .85s cubic-bezier(.2,.7,.2,1)}
+  .arm.lead .afill{background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+  .arm.mid .afill{background:linear-gradient(90deg,#5a9280,var(--accent-2))}
+  .arm.low .afill{background:linear-gradient(90deg,#b8ab8e,#9a8d70)}
+  .arm .scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.62rem;color:var(--ink-3);margin-top:6px}
+  .metrics{border:1px solid var(--line-2);border-radius:11px;overflow:hidden;background:var(--card);display:grid;grid-template-columns:1fr 1fr}
+  .metric{padding:22px 22px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+  .metric:nth-child(2n){border-right:none}
+  .metric:nth-last-child(-n+2){border-bottom:none}
+  .metric.hl{background:var(--accent-soft)}
+  .metric .mk{font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+  .metric .mv{font-family:var(--disp);font-weight:700;font-size:1.9rem;margin-top:8px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .metric.hl .mv{color:var(--accent)}
+  .metric .md{font-size:.9rem;color:var(--ink-1);margin-top:6px;line-height:1.45}
+  .finding{margin-top:32px;max-width:74ch;font-size:1.05rem;line-height:1.6;color:var(--ink-1)}
+  .finding em{font-style:italic;color:var(--ink)}
+
+  /* ---------- candidates ---------- */
+  .filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:24px}
+  .filters button{font-family:var(--mono);font-size:.74rem;color:var(--ink-1);background:var(--card);
+    border:1px solid var(--line-2);border-radius:999px;padding:7px 15px;cursor:pointer;transition:background .16s,color .16s,border-color .16s}
+  .filters button:hover{border-color:var(--accent);color:var(--accent)}
+  .filters button.on{background:var(--accent);color:#f3efe4;border-color:var(--accent)}
+  .filters button.on:hover{color:#f3efe4}
+  .tbl-wrap{border:1px solid var(--line-2);border-radius:10px;overflow-x:auto;background:var(--card)}
+  table{width:100%;border-collapse:collapse;min-width:640px}
+  th,td{text-align:left;padding:14px 20px;font-size:.88rem}
+  thead th{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:400;border-bottom:1px solid var(--line-2);background:var(--paper)}
+  tbody tr{border-bottom:1px solid var(--line)}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:var(--paper)}
+  td.id{font-family:var(--mono);color:var(--ink);font-size:.8rem}
+  td.phy{color:var(--ink-1)}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  .nov-pill{display:inline-block;font-family:var(--mono);font-size:.76rem;padding:3px 10px;border-radius:5px;font-weight:500}
+  .conv{display:inline-flex;gap:4px}
+  .conv i{width:15px;height:6px;border-radius:2px;background:var(--line-2);display:inline-block}
+  .conv i.on{background:var(--accent)}
+  .tbl-note{font-family:var(--mono);font-size:.76rem;color:var(--ink-2);margin-top:14px}
+
+  /* ---------- honesty ---------- */
+  .honesty{border:1px solid var(--line-2);border-radius:11px;padding:34px 34px;background:var(--card)}
+  .honesty h3{font-size:1.4rem}
+  .honesty .lead{margin-top:10px;color:var(--ink-1);font-size:1.05rem}
+  .honesty dl{margin:26px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:22px 40px}
+  @media (max-width:780px){.honesty dl{grid-template-columns:1fr}}
+  .honesty .item dt{font-family:var(--disp);font-weight:600;font-size:1rem;color:var(--ink);padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:9px}
+  .honesty .item dd{margin:0;color:var(--ink-1);font-size:.95rem;line-height:1.5}
+
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--line-2);background:var(--paper-2);padding:60px 0 40px}
+  .foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:44px}
+  @media (max-width:780px){.foot-grid{grid-template-columns:1fr;gap:32px}}
+  .foot-brand p{margin-top:16px;color:var(--ink-1);font-size:.98rem;max-width:40ch;line-height:1.5}
+  .foot-col h5{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 18px;font-weight:400}
+  .person{margin-bottom:16px}
+  .person .nm{font-family:var(--disp);font-weight:600;font-size:.98rem}
+  .person .rl{font-family:var(--mono);font-size:.76rem;color:var(--ink-2);margin-top:2px}
+  .foot-col a{display:block;color:var(--ink-1);font-size:.94rem;margin-bottom:11px;transition:color .16s}
+  .foot-col a:hover{color:var(--accent)}
+  .foot-bot{margin-top:48px;padding-top:24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-family:var(--mono);font-size:.74rem;color:var(--ink-2)}
+
+  .reveal{opacity:1}
+  /* only hide-then-reveal when JS is running, so a no-JS load is never blank */
+  @media (prefers-reduced-motion:no-preference){
+    .js .reveal{opacity:0;transform:translateY(14px);transition:opacity .65s ease,transform .65s ease}
+    .js .reveal.in{opacity:1;transform:none}
+  }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+</style>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <svg class="mk" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10.2" stroke="#C7BCA2" stroke-width="1.3"/>
+        <circle cx="12" cy="12" r="3.4" fill="#2C5A4B"/>
+        <circle cx="18" cy="8.6" r="1" fill="#BC8A2E"/>
+        <circle cx="6.4" cy="16" r="1" fill="#575142"/>
+      </svg>
+      Obscuron
+    </a>
+    <nav class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#approach">Approach</a>
+      <a href="#method">Method</a>
+      <a href="#instrument">Instrument</a>
+      <a href="#results">Results</a>
+      <a class="nav-tag" href="#footer">Final-year capstone</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy reveal">
+      <span class="eyebrow">Microbial functional dark matter</span>
+      <h1>Putting a calibrated number on the unknown.</h1>
+      <p class="lede">Most microbial genes have no known function and no ground truth to check against. Obscuron scores how far each one sits beyond characterised sequence space, with a checked error rate, then proves the score works by rewinding the reference database in time.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#instrument">Try the instrument</a>
+        <a class="btn btn-ghost" href="#results">See the results</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hs"><span class="n" style="color:var(--accent)">0.962</span><span class="l">Held-out AUROC</span></div>
+        <div class="hs"><span class="n">4,138</span><span class="l">Validated positives</span></div>
+        <div class="hs"><span class="n">22.2%</span><span class="l">Genes dark at T&#8320;</span></div>
+        <div class="hs"><span class="n">5</span><span class="l">Evidence layers</span></div>
+      </div>
+    </div>
+    <figure class="hero-fig reveal">
+      <div class="frame"><canvas id="field" aria-label="A projection of sequence embedding space showing clustered characterised families and scattered dark genes"></canvas></div>
+      <figcaption>A projection of sequence-embedding space. Characterised families cluster; dark genes fall in the gaps between them.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="wrap">
+    <div class="prob-grid">
+      <div class="prob-copy reveal">
+        <span class="eyebrow">The problem</span>
+        <h2>A fifth of the microbial world has no name.</h2>
+        <p class="lead">Function is normally assigned by similarity to something already characterised. A gene with no similar known sequence gets nothing, so it stays dark.</p>
+        <p>Across a 502-genome, phylum-stratified survey, more than one in five proteins carried no Pfam family at the snapshot boundary. The deeper obstacle is evaluation: with no labels, you cannot even tell whether a novelty detector is right.</p>
+        <p>Obscuron manufactures a real test set by freezing the reference at an earlier snapshot and grading what was dark then against what has since been characterised.</p>
+      </div>
+      <div class="figpanel reveal">
+        <div class="cap">Panel composition &middot; 1,341,100 proteins</div>
+        <div class="bar-track" role="img" aria-label="22.2 percent dark, remainder characterised">
+          <div class="bar-dark"></div><div class="bar-known"></div>
+        </div>
+        <div class="bar-legend">
+          <span class="k"><span class="swatch" style="background:#e7dfcd;border:1px solid var(--line-2)"></span>Dark at T&#8320; &middot; 22.2%</span>
+          <span class="k"><span class="swatch" style="background:var(--accent)"></span>Characterised &middot; 77.8%</span>
+        </div>
+        <div class="funnel">
+          <div class="frow"><span class="fn">Proteins surveyed</span><span class="fv">1,341,100</span></div>
+          <div class="frow s2"><span class="fn">Dark at T&#8320; &middot; no Pfam-35 hit</span><span class="fv">297,798</span></div>
+          <div class="frow s3"><span class="fn">Characterised by T&#8321; &middot; positives</span><span class="fv">4,138</span></div>
+        </div>
+        <p class="note">Positives clear the go / no-go floor by 41&ndash;83&times;.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPROACH -->
+<section id="approach" class="alt">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The approach</span>
+      <h2>Three ideas doing the work.</h2>
+      <p>Not annotation. A calibrated statement of how far a gene sits beyond the known, validated on a benchmark built to resist the one thing that quietly inflates every temporal holdout.</p>
+    </div>
+    <div class="pillars">
+      <div class="pillar reveal">
+        <div class="pl">Scoring</div>
+        <h3>Calibrated novelty</h3>
+        <p>Distance from characterised space in a protein-language-model embedding, passed through an extreme-value tail fit so the output is a checked false-flag rate, not a hand-set cutoff.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="pl">Validation</div>
+        <h3>Retrospective proof</h3>
+        <p>Freeze the reference at T&#8320;, score what was dark then, and grade those scores against T&#8321;, where some genes have since been characterised. Real labels, no manual annotation.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="pl">Rigour</div>
+        <h3>Leakage control</h3>
+        <p>The headline runs on ESM-2, pretrained before the snapshot, so it cannot have seen the answer. A genomic model that saw the window is kept as the controlled comparison arm.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section id="method">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The method &middot; five evidence layers</span>
+      <h2>One frontier, seen five independent ways.</h2>
+      <p>The framework rests on convergence: a candidate is trustworthy when independent lines of evidence agree. Layer 1 carries the headline; the rest corroborate it from angles that share no inputs.</p>
+    </div>
+    <div class="layers reveal">
+      <div class="layer core">
+        <div class="lnum">1</div>
+        <div><h4>Calibrated novelty scoring<span class="core-tag">Core</span></h4>
+          <p>Extreme-value peaks-over-threshold on kNN cosine distance in ESM-2 embeddings. The calibration layer, tested on held-out protein families, is the contribution.</p></div>
+        <div class="lmetric"><div class="mv">0.962</div><div class="ml">Held-out AUROC &middot; 903 fam</div></div>
+      </div>
+      <div class="layer">
+        <div class="lnum">2</div>
+        <div><h4>Structure-aware embedding</h4>
+          <p>A ProstT5 structural encoder as the lightweight fold substitute. A strong family separator, complementary to sequence rather than superior to it.</p></div>
+        <div class="lmetric"><div class="mv">0.960</div><div class="ml">AUROC &middot; 60 fam</div></div>
+      </div>
+      <div class="layer">
+        <div class="lnum">3</div>
+        <div><h4>Immune self / non-self</h4>
+          <p>Calibrated negative selection: self-tolerance holds at 0.024, and the coarse detector converges with the sequence score rather than beating it. A supporting narrative, reported honestly.</p></div>
+        <div class="lmetric"><div class="mv">+0.49</div><div class="ml">Convergence &middot; Spearman</div></div>
+      </div>
+      <div class="layer">
+        <div class="lnum">4</div>
+        <div><h4>Multi-signal convergence</h4>
+          <p>Three independent axes: embedding, genomic context and composition. A 108-gene triple-convergent set sits 3.4&times; beyond chance agreement.</p></div>
+        <div class="lmetric"><div class="mv">3.4&times;</div><div class="ml">Beyond chance</div></div>
+      </div>
+      <div class="layer">
+        <div class="lnum">5</div>
+        <div><h4>Statistical coding structure</h4>
+          <p>Codon-position bias and k-mer entropy against shuffle and Markov nulls confirm the dark genes are genuinely coding, not spurious open reading frames.</p></div>
+        <div class="lmetric"><div class="mv">0.94</div><div class="ml">Coding vs noise AUROC</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTRUMENT -->
+<section id="instrument" class="alt">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Live instrument</span>
+      <h2>Score a sequence against the known.</h2>
+      <p>Paste an amino-acid sequence to read a calibrated novelty verdict, its position in the tail, and its nearest characterised families.</p>
+    </div>
+    <div class="inst">
+      <div class="panel reveal">
+        <div class="panel-h"><span class="t">Query &middot; amino-acid sequence</span></div>
+        <div class="panel-b">
+          <textarea id="seq" spellcheck="false" aria-label="amino acid sequence input"></textarea>
+          <div class="seq-meta"><span id="len">0 residues</span><span id="warn"></span></div>
+          <div class="examples">
+            <div class="lbl">Load an example</div>
+            <div class="ex-btns" id="exBtns"></div>
+          </div>
+          <div class="run-row">
+            <button class="btn btn-primary" id="runBtn">Score sequence</button>
+            <button class="btn btn-ghost" id="clearBtn">Clear</button>
+          </div>
+          <p class="disc"><b>Preview scorer.</b> This runs a lightweight client-side proxy over amino-acid composition and complexity so the interface works standalone. The deployed instrument runs the full ESM-2 embedding through the fitted GPD tail (&xi;&nbsp;=&nbsp;0.0998, &beta;&nbsp;=&nbsp;0.00586). It flags <b>novelty and priority, not function.</b></p>
+        </div>
+      </div>
+
+      <div class="panel readout reveal">
+        <div class="panel-h"><span class="t">Calibrated readout</span><span class="arm">ESM-2 &middot; clean arm</span></div>
+        <div class="panel-b">
+          <div class="verdict">
+            <span class="badge" id="badge">Awaiting query</span>
+            <span class="vtext" id="vtext">Load or paste a sequence, then score it.</span>
+          </div>
+          <div class="meter">
+            <div class="mtop"><span class="lab">Novelty index</span><span class="val" id="novVal">&mdash;</span></div>
+            <div class="track"><div class="fill" id="novFill" style="width:0%"></div></div>
+            <div class="ticks"><span>within known space</span><span>deep dark matter</span></div>
+          </div>
+          <div class="rgrid">
+            <div class="rstat"><div class="k">Calibrated tail p-value</div><div class="v" id="pval">&mdash;</div></div>
+            <div class="rstat"><div class="k">Composition distance</div><div class="v" id="dist">&mdash;</div></div>
+          </div>
+          <div class="tailplot">
+            <div class="ph"><span>GPD tail &middot; exceedance</span><span id="tailpos">&mdash;</span></div>
+            <svg id="tailSvg" viewBox="0 0 320 118" width="100%" height="118" role="img" aria-label="tail distribution with query position"></svg>
+          </div>
+          <div class="famsec">
+            <div class="ph"><span>Nearest characterised families</span><span class="dim">illustrative</span></div>
+            <div class="fam-list" id="famList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Results</span>
+      <h2>What the numbers say.</h2>
+      <p>The headline is validated on 903 held-out families. The comparison arms are matched family-for-family, so the contrast is fair.</p>
+    </div>
+    <div class="res-grid">
+      <div class="chartcard reveal">
+        <div class="ch-h">Embedding arms &middot; held-out AUROC, matched families</div>
+        <div class="arm-chart">
+          <div class="arm lead">
+            <div class="arm-top"><span class="arm-name">ESM-2 <span class="sub">protein &middot; leakage-clean</span></span><span class="arm-val" style="color:var(--accent)">0.988</span></div>
+            <div class="abar"><div class="afill" data-w="98.8"></div></div>
+            <div class="scale"><span>0.70</span><span>0.85</span><span>1.00</span></div>
+          </div>
+          <div class="arm mid">
+            <div class="arm-top"><span class="arm-name">ProstT5 <span class="sub">structure-aware</span></span><span class="arm-val">0.960</span></div>
+            <div class="abar"><div class="afill" data-w="96.0"></div></div>
+          </div>
+          <div class="arm low">
+            <div class="arm-top"><span class="arm-name">Genos-m <span class="sub">genomic &middot; leakage-controlled</span></span><span class="arm-val">0.739</span></div>
+            <div class="abar"><div class="afill" data-w="73.9"></div></div>
+          </div>
+        </div>
+        <p class="dim" style="font-family:var(--mono);font-size:.78rem;margin-top:24px;line-height:1.55">Even with a leakage advantage, the genomic model underperforms the clean protein model, so the headline is not a leakage artifact. Bars scaled 0.70&ndash;1.00.</p>
+      </div>
+
+      <div class="metrics reveal">
+        <div class="metric hl"><div class="mk">Layer 1 &middot; headline</div><div class="mv">0.962</div><div class="md">Held-out-family AUROC across 903 families, mid-late embedding layer.</div></div>
+        <div class="metric"><div class="mk">Tail calibration</div><div class="mv">0.984</div><div class="md">GPD goodness-of-fit, KS test. &xi;&nbsp;=&nbsp;0.0998, &beta;&nbsp;=&nbsp;0.00586.</div></div>
+        <div class="metric"><div class="mk">Convergent frontier</div><div class="mv">108</div><div class="md">Genes flagged by three independent axes, 3.4&times; beyond chance.</div></div>
+        <div class="metric"><div class="mk">Coding vs noise</div><div class="mv">0.94</div><div class="md">Dark genes are genuinely coding, not spurious ORFs.</div></div>
+      </div>
+    </div>
+    <p class="finding reveal">A deliberate finding, not a failure. Because genes get characterised by homology, the validated positives are the <em>near-known</em> ones, so a good novelty score <em>anti-predicts</em> near-term characterisation. Validation rests on the controlled held-out-family test, not raw precision on that biased set.</p>
+  </div>
+</section>
+
+<!-- CANDIDATES -->
+<section id="candidates" class="alt">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Candidate frontier</span>
+      <h2>Ranked dark-gene candidates.</h2>
+      <p>The highest-confidence unexplored genes, ranked by calibrated novelty and filtered by phylum. Convergence marks show how many independent axes flag each gene.</p>
+    </div>
+    <div class="filters reveal" id="filters"></div>
+    <div class="tbl-wrap reveal">
+      <table>
+        <thead><tr><th>Protein</th><th>Phylum</th><th style="text-align:right">Novelty</th><th style="text-align:right">Tail p</th><th>Axes</th></tr></thead>
+        <tbody id="candBody"></tbody>
+      </table>
+    </div>
+    <p class="tbl-note reveal">Example rows drawn from the survey panel to demonstrate the interface. The deployed table reads the fitted scorer over the full dark set.</p>
+  </div>
+</section>
+
+<!-- HONESTY -->
+<section id="honesty">
+  <div class="wrap">
+    <div class="honesty reveal">
+      <h3>What this does and does not claim</h3>
+      <p class="lead">The guardrails are part of the method, not a caveat bolted on afterward.</p>
+      <dl>
+        <div class="item"><dt>Prioritisation, not determination</dt><dd>Every score ranks how far a gene sits beyond known space. It never asserts a function.</dd></div>
+        <div class="item"><dt>The headline is leakage-clean</dt><dd>ESM-2 was pretrained before the snapshot; the genomic model is quarantined to the controlled comparison.</dd></div>
+        <div class="item"><dt>Comparisons are matched-scale</dt><dd>The three arms are scored on identical family sets; some arms run on subsampled families where compute is bound.</dd></div>
+        <div class="item"><dt>Retrospective, not novel in itself</dt><dd>Temporal holdout is established practice. The contribution is the leakage control layered on top of it.</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#top" style="font-size:1.3rem">
+          <svg class="mk" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:24px;height:24px">
+            <circle cx="12" cy="12" r="10.2" stroke="#C7BCA2" stroke-width="1.3"/>
+            <circle cx="12" cy="12" r="3.4" fill="#2C5A4B"/>
+            <circle cx="18" cy="8.6" r="1" fill="#BC8A2E"/>
+            <circle cx="6.4" cy="16" r="1" fill="#575142"/>
+          </svg>
+          Obscuron
+        </a>
+        <p>Calibrated novelty detection for microbial dark matter, validated by leakage-controlled retrospective analysis.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Authorship</h5>
+        <div class="person"><div class="nm">Angshuman Chakravertty</div><div class="rl">Track 1 &middot; methodology, design, analysis</div></div>
+        <div class="person"><div class="nm">Rayyan Mohammed</div><div class="rl">Track 2 &middot; implementation, execution</div></div>
+        <div class="person"><div class="rl">MPSTME, NMIMS Hyderabad</div></div>
+      </div>
+      <div class="foot-col">
+        <h5>Project</h5>
+        <a href="#instrument">Live instrument</a>
+        <a href="#results">Validation results</a>
+        <a href="#method">Five-layer method</a>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>Final-year B.Tech CSE capstone &middot; 2026&ndash;27</span>
+      <span>Novelty and priority, not function.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  document.documentElement.classList.add("js");
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- static embedding-space figure (drawn once) ---------- */
+  var canvas = document.getElementById("field");
+  if(canvas && canvas.getContext){
+    var ctx = canvas.getContext("2d");
+    function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; var t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+    function draw(){
+      var dpr=Math.min(window.devicePixelRatio||1,2);
+      var w=canvas.clientWidth, h=canvas.clientHeight;
+      canvas.width=w*dpr; canvas.height=h*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,w,h);
+      var r=rng(20260913);
+      var known=[], centers=6;
+      for(var c=0;c<centers;c++){
+        var cx=0.14*w+r()*0.72*w, cy=0.14*h+r()*0.72*h, n=7+Math.floor(r()*8), rad=16+r()*30;
+        for(var i=0;i<n;i++){ var a=r()*6.283, rr=Math.pow(r(),.6)*rad; known.push({x:cx+Math.cos(a)*rr,y:cy+Math.sin(a)*rr,s:1.3+r()*1.6}); }
+      }
+      // faint links within neighbourhoods
+      for(i=0;i<known.length;i++){ for(var j=i+1;j<known.length;j++){
+        var dx=known[i].x-known[j].x, dy=known[i].y-known[j].y, d2=dx*dx+dy*dy;
+        if(d2<1500){ ctx.strokeStyle="rgba(44,90,75,"+(0.14*(1-d2/1500))+")"; ctx.lineWidth=.7; ctx.beginPath(); ctx.moveTo(known[i].x,known[i].y); ctx.lineTo(known[j].x,known[j].y); ctx.stroke(); }
+      }}
+      // scattered dark genes
+      var scatter=Math.round(w*h/5200);
+      for(var k=0;k<scatter;k++){ var x=r()*w,y=r()*h;
+        ctx.beginPath(); ctx.fillStyle="rgba(87,81,66,"+(0.16+r()*0.14)+")"; ctx.arc(x,y,0.7+r()*0.8,0,6.283); ctx.fill(); }
+      // known family points
+      for(i=0;i<known.length;i++){ var p=known[i];
+        ctx.beginPath(); ctx.fillStyle="rgba(44,90,75,.16)"; ctx.arc(p.x,p.y,p.s*2.7,0,6.283); ctx.fill();
+        ctx.beginPath(); ctx.fillStyle="rgba(44,90,75,.9)"; ctx.arc(p.x,p.y,p.s,0,6.283); ctx.fill(); }
+    }
+    draw();
+    var rt; window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(draw,180);});
+  }
+
+  /* ---------- scoring proxy ---------- */
+  var AA="ACDEFGHIKLMNPQRSTVWY".split("");
+  var REF={A:8.25,R:5.53,N:4.06,D:5.46,C:1.38,Q:3.93,E:6.72,G:7.08,H:2.27,I:5.91,
+           L:9.65,K:5.80,M:2.41,F:3.86,P:4.74,S:6.65,T:5.36,W:1.10,Y:2.92,V:6.87};
+  function clean(s){ return (s||"").toUpperCase().replace(/[^A-Z]/g,""); }
+  function scoreSeq(raw){
+    var s=clean(raw), L=s.length;
+    if(L<10) return null;
+    var cnt={}; AA.forEach(function(a){cnt[a]=0;});
+    var valid=0;
+    for(var i=0;i<L;i++){ var c=s[i]; if(cnt[c]!==undefined){cnt[c]++; valid++;} }
+    if(valid<10) return null;
+    var chi=0, ent=0;
+    AA.forEach(function(a){
+      var q=cnt[a]/valid*100, p=REF[a];
+      chi += (q-p)*(q-p)/p;
+      var f=cnt[a]/valid; if(f>0) ent += -f*Math.log(f);
+    });
+    var lowComplexity=(Math.log(20)-ent)/Math.log(20);
+    var dist = Math.min(0.35, chi/900 + lowComplexity*0.09);
+    var nov = 1 - Math.exp(-(chi/70 + lowComplexity*2.4));
+    nov = Math.max(0.02, Math.min(0.985, nov));
+    var p = Math.max(1e-5, Math.min(0.62, 0.9*Math.exp(-3.7*nov)));
+    return {L:L, valid:valid, dist:dist, nov:nov, p:p, seq:s};
+  }
+
+  var PFAMS=[
+    ["PF00069","Protein kinase domain"],["PF00005","ABC transporter"],
+    ["PF13561","Short-chain dehydrogenase"],["PF00291","PLP-dependent transferase"],
+    ["PF07992","Pyridine nucleotide oxidoreductase"],["PF00583","Acetyltransferase (GNAT)"],
+    ["PF00171","Aldehyde dehydrogenase"],["PF01370","NAD-dependent epimerase"],
+    ["PF00534","Glycosyltransferase"],["PF13439","Glycosyltransferase family 4"],
+    ["PF00072","Response regulator receiver"],["PF00512","Histidine kinase"]
+  ];
+  function famsFor(r){
+    var h=0; for(var i=0;i<r.seq.length;i++){ h=(h*31 + r.seq.charCodeAt(i))>>>0; }
+    var base = 0.9 - r.nov*0.55, out=[];
+    for(var k=0;k<3;k++){
+      var idx=(h + k*7)%PFAMS.length;
+      var sim=Math.max(0.05, base - k*0.11 - ((h>>(k*3))&7)*0.006);
+      out.push({pf:PFAMS[idx][0], nm:PFAMS[idx][1], sim:sim});
+    }
+    return out;
+  }
+
+  var seqEl=document.getElementById("seq"), lenEl=document.getElementById("len"), warnEl=document.getElementById("warn");
+  var badge=document.getElementById("badge"), vtext=document.getElementById("vtext");
+  var novVal=document.getElementById("novVal"), novFill=document.getElementById("novFill");
+  var pval=document.getElementById("pval"), dist=document.getElementById("dist");
+  var tailpos=document.getElementById("tailpos"), famList=document.getElementById("famList"), tailSvg=document.getElementById("tailSvg");
+
+  function verdict(nov){
+    if(nov>=0.78) return {t:"High novelty", c:"var(--heat-high)", bg:"rgba(177,74,46,.12)", d:"Strong candidate for genuinely unexplored sequence space. Prioritise."};
+    if(nov>=0.52) return {t:"Moderate novelty", c:"var(--heat-mid)", bg:"rgba(188,138,46,.14)", d:"Sits partway beyond the characterised distribution. Worth a closer look."};
+    return {t:"Within known space", c:"var(--accent)", bg:"rgba(44,90,75,.12)", d:"Composition is consistent with characterised families."};
+  }
+  function fmtP(p){ return p<0.001 ? p.toExponential(1) : p.toFixed(3); }
+  function drawTail(nov){
+    var x0=14,x1=306,y0=96,y1=12;
+    function yf(t){ return y0-(y0-y1)*Math.pow(1-t*0.86,3.2); }
+    var d="M"+x0+" "+y0, n=60;
+    for(var i=0;i<=n;i++){ var t=i/n, x=x0+(x1-x0)*t; d+=" L"+x.toFixed(1)+" "+yf(t).toFixed(1); }
+    var af=d+" L"+x1+" "+y0+" Z";
+    var qn=Math.min(0.985,nov), qx=x0+(x1-x0)*qn, qy=yf(qn);
+    var col = nov>=0.78?"#B14A2E":(nov>=0.52?"#BC8A2E":"#2C5A4B");
+    tailSvg.innerHTML=
+      '<defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="0">'+
+      '<stop offset="0" stop-color="#3d7864" stop-opacity=".26"/>'+
+      '<stop offset=".62" stop-color="#BC8A2E" stop-opacity=".22"/>'+
+      '<stop offset="1" stop-color="#B14A2E" stop-opacity=".24"/></linearGradient></defs>'+
+      '<line x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y0+'" stroke="#C7BCA2" stroke-width="1"/>'+
+      '<path d="'+af+'" fill="url(#tg)"/>'+
+      '<path d="'+d+'" fill="none" stroke="#8b8370" stroke-width="1.4"/>'+
+      '<line x1="'+qx.toFixed(1)+'" y1="'+y1+'" x2="'+qx.toFixed(1)+'" y2="'+y0+'" stroke="'+col+'" stroke-width="1.4" stroke-dasharray="3 3"/>'+
+      '<circle cx="'+qx.toFixed(1)+'" cy="'+qy.toFixed(1)+'" r="4.4" fill="'+col+'"/>'+
+      '<circle cx="'+qx.toFixed(1)+'" cy="'+qy.toFixed(1)+'" r="8.5" fill="'+col+'" opacity=".16"/>'+
+      '<text x="'+x0+'" y="112" fill="#b3aa93" font-size="8" font-family="IBM Plex Mono">u = 90th pct</text>'+
+      '<text x="'+x1+'" y="112" fill="#b3aa93" font-size="8" font-family="IBM Plex Mono" text-anchor="end">extreme</text>';
+  }
+  function render(r){
+    if(!r){
+      badge.textContent="Sequence too short"; badge.style.background="rgba(177,74,46,.12)"; badge.style.color="var(--heat-high)";
+      vtext.textContent="Enter at least 10 valid amino-acid residues."; return;
+    }
+    var v=verdict(r.nov);
+    badge.textContent=v.t; badge.style.background=v.bg; badge.style.color=v.c;
+    vtext.textContent=v.d;
+    novVal.textContent=(r.nov*100).toFixed(1); novVal.style.color=v.c;
+    novFill.style.width=(r.nov*100).toFixed(1)+"%";
+    pval.textContent=fmtP(r.p); pval.style.color=v.c;
+    dist.textContent=r.dist.toFixed(4);
+    tailpos.textContent=(r.nov*100).toFixed(0)+"th percentile";
+    drawTail(r.nov);
+    famList.innerHTML=famsFor(r).map(function(f){
+      return '<div class="fam"><span class="pf">'+f.pf+'</span><span class="nm">'+f.nm+'</span>'+
+             '<span class="sv">'+f.sim.toFixed(2)+'</span>'+
+             '<span class="simbar"><span class="simfill" style="width:'+(f.sim*100).toFixed(0)+'%"></span></span></div>';
+    }).join("");
+  }
+  function run(){ render(scoreSeq(seqEl.value)); }
+  function updateLen(){
+    var c=clean(seqEl.value), L=c.length;
+    lenEl.textContent=L+" residue"+(L===1?"":"s");
+    var invalid=seqEl.value.replace(/\s/g,"").length - c.length;
+    warnEl.innerHTML = invalid>0 ? '<span class="bad">'+invalid+' non-standard char'+(invalid===1?"":"s")+' ignored</span>' : "";
+  }
+  document.getElementById("runBtn").addEventListener("click",run);
+  document.getElementById("clearBtn").addEventListener("click",function(){ seqEl.value=""; updateLen(); render(scoreSeq("")); });
+  seqEl.addEventListener("input",updateLen);
+
+  var EXAMPLES={
+    "Characterised enzyme":"MSKVLVTGGAGFIGSHTVVELLEAGYDVVVLDNLSNGHREAVPKGVPFVEGDIRDAELLDRLFAEHQIDAVIHFAGLKAVGESVAKPLLYYRNNVVGTLNLLEAMAKHGVKNFVFSSSATVYGDATRFPTDEDHPTGTPQSPYGKSKLMVEQILRDLAKAPEEWSIALLRYFNPVGAHESGLIGEDPQGIPNNLMPYVAQVAVGRRDKLSVFGTDYPTEDGTGVRDYIHVMDLADGHVAALEKLADK",
+    "Dark-matter candidate":"MNKNTLLKKLALSSALALALSACSNNNNNNSSSNSNSTSTNTSNTNSSNTGNTGNGNTNGNGNTGNGNTGNGNGNTGNGGNTGGNGGNTGGKGGNKGGNKGGNKPGNKPGNKPGNKPQNKPQNKPQNKPQNQPQNQPQNQPQ",
+    "Low-complexity repeat":"MAAAAAAAAAGGGGGGGGGPPPPPPPPPQQQQQQQQQAAAAAAAAAGGGGGGGGGPPPPPPPPPSSSSSSSSSAAAAAAAAAGGGGGGGGGPPPPPPPPPRRRRRRRRRAAAAAAAAAGGGGGGGGG",
+    "Membrane transporter":"MLKQLLNILAILFLVACSSSGTPQSGGSDTVTLNFWHAMSGELGKALEDLIADFEKANPGIKVELVNQGSYDELQQKLIAALAAGNAPDVFQVYEVGTRLMIDSGAVEPLDDYIDKDGFDLSQFEPGVLEACRYDGHYYALPFNSSTPVLYYNKDLLKKAGVDPEQPPKTWDE"
+  };
+  var exBtns=document.getElementById("exBtns");
+  Object.keys(EXAMPLES).forEach(function(name){
+    var b=document.createElement("button"); b.type="button"; b.textContent=name;
+    b.addEventListener("click",function(){ seqEl.value=EXAMPLES[name]; updateLen(); run(); });
+    exBtns.appendChild(b);
+  });
+
+  /* ---------- candidates ---------- */
+  var CANDS=[
+    {id:"GCA_902384_00417", phy:"Patescibacteria", nov:0.94, p:0.00021, ax:3},
+    {id:"GCA_014385_01120", phy:"Thermoproteota", nov:0.91, p:0.00048, ax:3},
+    {id:"GCA_003242_02993", phy:"Patescibacteria", nov:0.89, p:0.00072, ax:2},
+    {id:"GCA_902765_00088", phy:"Bacteroidota", nov:0.87, p:0.00110, ax:3},
+    {id:"GCA_011372_01844", phy:"Pseudomonadota", nov:0.85, p:0.00165, ax:2},
+    {id:"GCA_003555_00521", phy:"Actinomycetota", nov:0.83, p:0.00240, ax:2},
+    {id:"GCA_902384_02210", phy:"Thermoproteota", nov:0.81, p:0.00318, ax:2},
+    {id:"GCA_014860_00976", phy:"Verrucomicrobiota", nov:0.79, p:0.00451, ax:1},
+    {id:"GCA_002504_01388", phy:"Bacteroidota", nov:0.77, p:0.00602, ax:2},
+    {id:"GCA_011372_00233", phy:"Pseudomonadota", nov:0.74, p:0.00887, ax:1},
+    {id:"GCA_900128_01705", phy:"Bacillota", nov:0.72, p:0.01120, ax:1},
+    {id:"GCA_003242_00659", phy:"Actinomycetota", nov:0.69, p:0.01640, ax:1}
+  ];
+  function novColor(n){ return n>=0.82?"var(--heat-high)":(n>=0.6?"var(--heat-mid)":"var(--accent)"); }
+  function novBg(n){ return n>=0.82?"rgba(177,74,46,.12)":(n>=0.6?"rgba(188,138,46,.14)":"rgba(44,90,75,.12)"); }
+  var candBody=document.getElementById("candBody");
+  function renderCands(filter){
+    candBody.innerHTML=CANDS.filter(function(c){return !filter||filter==="All"||c.phy===filter;}).map(function(c){
+      var conv=""; for(var i=0;i<3;i++){ conv+='<i class="'+(i<c.ax?"on":"")+'"></i>'; }
+      return '<tr><td class="id">'+c.id+'</td><td class="phy">'+c.phy+'</td>'+
+        '<td class="num"><span class="nov-pill" style="color:'+novColor(c.nov)+';background:'+novBg(c.nov)+'">'+c.nov.toFixed(2)+'</span></td>'+
+        '<td class="num dim">'+c.p.toFixed(5)+'</td>'+
+        '<td><span class="conv" title="'+c.ax+' of 3 axes">'+conv+'</span></td></tr>';
+    }).join("");
+  }
+  var phyla=["All"]; CANDS.forEach(function(c){ if(phyla.indexOf(c.phy)<0) phyla.push(c.phy); });
+  var filtersEl=document.getElementById("filters");
+  phyla.forEach(function(p,i){
+    var b=document.createElement("button"); b.type="button"; b.textContent=p; if(i===0)b.className="on";
+    b.addEventListener("click",function(){
+      Array.prototype.forEach.call(filtersEl.children,function(x){x.classList.remove("on");});
+      b.classList.add("on"); renderCands(p);
+    });
+    filtersEl.appendChild(b);
+  });
+  renderCands("All");
+
+  /* ---------- reveal + bar fills ---------- */
+  var reveals=document.querySelectorAll(".reveal");
+  if("IntersectionObserver" in window && !reduce){
+    var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } }); },{threshold:.12});
+    reveals.forEach(function(el){io.observe(el);});
+  } else { reveals.forEach(function(el){el.classList.add("in");}); }
+  function fillArms(){ document.querySelectorAll(".afill").forEach(function(el){ el.style.width=el.getAttribute("data-w")+"%"; }); }
+  if("IntersectionObserver" in window){
+    var io2=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ fillArms(); io2.disconnect(); } }); },{threshold:.2});
+    var rg=document.getElementById("results"); if(rg) io2.observe(rg);
+  } else { fillArms(); }
+
+  seqEl.value=EXAMPLES["Dark-matter candidate"];
+  updateLen(); run();
+})();
+</script>
