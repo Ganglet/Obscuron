@@ -89,3 +89,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: n_detectors [20000, 30000, 40000, 50000] (extends P3-D7's [1000,5000,10000,20000]), same 30 held-out families, seed, PCA-50, box sampling; config/immune.yaml frozen default (5000) unchanged
 - Result: AUROC mean 0.862(20k, matches P3-D7 exactly) -> 0.889(30k) -> 0.890(40k) -> 0.899(50k); marginal gain collapses from +0.030 (10k->20k) to +0.027 (20k->30k) to +0.001 (30k->40k) -- plateaus around 30,000 detectors, ~0.89 AUROC, still short of Layer 1's 0.962
 - Next: report saturation point to Track 1 for a reviewed decision on whether to update the frozen n_detectors default (P2-D5/P3-D5 anti-fishing rule -- not changed unilaterally here)
+
+## 2026-09-14 -- full 903-family genos-m eval + genos-m as 4th convergence axis (cloud, g5.xlarge)
+- Commit: pending
+- Config: layers 12,9; O(N^2)-fixed reembed_eval.py; embed_genos_m_dark_queries.py on all 34,138 dark queries; run_convergence.py --extra-axis composition_novelty.csv --extra-axis genos-m_novelty_scores.csv
+- Result: full-903-family AUROC layer 9 raw=0.665 mean/0.703 median (vs 300-family-capped 0.739/0.795); 4-axis convergence on 31,712 queries -- genos-m~evt rho=0.15, genos-m~context rho=-0.05, genos-m~composition rho=-0.32; genos-m-top-10% positive-rate lift=1.30x (the only axis that enriches, likely leakage-driven per P1-D7/P2-D7); 4-way convergent set n=35, lift=0.94x
+- Next: report to Track 1 -- the leakage caveat on the genos-m lift needs to land in the manuscript alongside the number, not just the number; fold corrected full-scale genos-m AUROC into any place the 300-family estimate was cited

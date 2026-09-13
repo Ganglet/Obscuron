@@ -147,16 +147,16 @@ GPD tail fit: ξ = 0.0998, β = 0.00586, KS goodness-of-fit p = 0.984.
 
 ### 3. Genome-vs-protein comparison — done at full scale, ESM-2 clearly leads
 
-Run on AWS (A10G) over the real 502-genome nucleotide panel, then compared *within one eval* against ESM-2 on the exact same 300 largest families / 6,907 proteins:
+Run on AWS (A10G) over the real 502-genome nucleotide panel — both a matched 300-family comparison against ESM-2, and the full 903-family eval on its own:
 
-| Model (same 300-family eval) | Held-out-family AUROC (mean / median) |
-|---|---|
-| ESM-2 layer 22 (protein) | **0.988 / 0.996** |
-| Genos-m layer 9 (genome) | 0.739 / 0.795 |
+| Model | Matched 300-family AUROC (mean / median) | Full 903-family AUROC (mean / median) |
+|---|---|---|
+| ESM-2 layer 22 (protein) | **0.988 / 0.996** | **0.962 / 0.985** |
+| Genos-m layer 9 (genome) | 0.739 / 0.795 | 0.665 / 0.703 |
 
-The genomic FM is a real signal (well above chance) but a distinctly weaker detector — and since Genos-m is the *leakage-controlled* arm (its GTDB R220 pretraining overlaps the benchmark window), it underperforms the leakage-clean protein FM even with a potential leakage advantage, so the ESM-2 headline is not a leakage artifact. A cross-model consistency also emerges: a mid-late layer beats the last layer for *both* models.
+The genomic FM is a real signal (well above chance) but a distinctly weaker detector — and since Genos-m is the *leakage-controlled* arm (its GTDB R220 pretraining overlaps the benchmark window), it underperforms the leakage-clean protein FM even with a potential leakage advantage, so the ESM-2 headline is not a leakage artifact. A cross-model consistency also emerges: a mid-late layer beats the last layer for *both* models. Note the full-scale numbers are meaningfully lower than the matched-300 ones for both models — family-capping systematically inflates AUROC (more reference members per fold, no small/rare families dragging the average down), so **the 903-family column is the reportable headline, the 300-family column is the fair apples-to-apples comparison.**
 
-> **Honest scope:** capped to the 300 largest families for a reasonable cloud runtime, so both arms read slightly higher than the full 903-family eval (ESM-2 is 0.988 here vs the 0.962 headline); the *comparison* is matched. Details: [`docs/problems_and_decisions.md` § P2-D11](docs/problems_and_decisions.md).
+> **Honest scope:** the 300-family cap was originally used for a reasonable cloud runtime; the full 903-family Genos-m eval has since been run (2026-09-14, ~75 min on a `g5.xlarge`, ~$1.25). Details: [`docs/problems_and_decisions.md` § P2-D11, P4-D8](docs/problems_and_decisions.md).
 
 ### 4. Layer 3 immune self/non-self — calibration holds, moderate convergence with Layer 1
 
@@ -172,17 +172,26 @@ The genomic FM is a real signal (well above chance) but a distinctly weaker dete
 
 > **Honest scope:** as a standalone detector, Layer 3 stays below Layer 1 even at its best swept setting (0.86 vs. 0.962) — it was designed to *corroborate* Layer 1 via an independently-derived signal, not to beat it. The frozen production config (5,000 detectors) sits at 0.74, well below what more detectors would buy; that headroom is flagged, not yet acted on. Details: [`docs/problems_and_decisions.md` § P3-D6, P3-D7](docs/problems_and_decisions.md).
 
-### 5. Layer 4 multi-signal convergence — independent axes agree beyond chance
+### 5. Layer 4 multi-signal convergence — independent axes agree beyond chance, with one leakage-flagged exception
 
-Three novelty axes of different kinds — Layer-1 EVT embedding novelty, an embedding-free genomic-context novelty (how dark a gene's on-contig neighbourhood is), and a sequence-composition novelty — combined so a gene is high-confidence novel only where they agree.
+Four novelty axes of different kinds — Layer-1 EVT embedding novelty, an embedding-free genomic-context novelty, a sequence-composition novelty, and (added 2026-09-14) Genos-m's own kNN novelty — combined so a gene is high-confidence novel only where they agree.
 
 | Axis pair | Spearman | Reading |
 |---|---|---|
 | EVT ~ genomic-context | −0.05 | independent |
 | genomic-context ~ composition | +0.01 | independent |
 | EVT ~ composition | +0.26 | moderate (ESM-2 encodes some composition) |
+| EVT ~ genos-m | +0.15 | weak-moderate |
+| genomic-context ~ genos-m | −0.05 | independent |
+| composition ~ genos-m | −0.32 | moderate, negative |
 
-The axes are largely independent, so convergence is genuine multi-evidence, not one signal restated. The 3-way convergent set is **108 genes = 3.4× more than chance would give** under independence, and every axis *depletes* the near-known positives (composition-top lift 0.26×) — so the convergent set is the high-confidence frontier the annotation pipeline leaves behind. Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4](docs/problems_and_decisions.md).
+The first three axes are largely independent, so their convergence is genuine multi-evidence, not one signal restated. The 3-way convergent set is **108 genes = 3.4× more than chance would give** under independence, and evt/context/composition all *deplete* the near-known positives (lifts 1.00×/0.68×/0.26×) — consistent with novelty anti-predicting near-term characterisation.
+
+**Genos-m breaks that pattern: its top-10% novelty *enriches* for positives (lift 1.30×)** — the only axis in the whole project that points this direction.
+
+> **Honest scope, not a 4th independent line of evidence:** Genos-m's pretraining saw GTDB R220, which sits inside this benchmark's T0→T1 window — the same leakage this project controls for everywhere else (P1-D7). The 1.30× lift is more plausibly elevated familiarity with genes Genos-m partially memorised during pretraining than genuine far-from-self novelty, so it's reported as a flagged leakage artifact, not folded into the "independent lines converge" story. The 4-way convergent set (all four axes, n=35, lift 0.94×) reads close to neutral for exactly this reason — genos-m's enrichment partially cancels the other three axes' depletion. Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4/D8](docs/problems_and_decisions.md).
+
+![Layer 4 multi-signal convergence](results/figures/layer4_convergence_summary.png)
 
 ### 6. Layer 5 coding-structure — the dark genes are genuinely coding
 
@@ -194,6 +203,8 @@ Codon-position base bias + k-mer entropy on all 34,138 dark genes, tested agains
 | **Coding-vs-noise AUROC** (real vs shuffle / vs Markov-1) | **0.94 / 0.94** |
 
 The dark matter carries genuine reading-frame structure, i.e. these are real ORFs and not spurious calls — a direct answer to the non-coding-artifact risk, and evidence the benchmark rests on real coding sequences.
+
+![Layer 5 coding-structure vs nulls](results/figures/layer5_coding_structure_summary.png)
 
 > **Honest scope:** true intergenic controls need full genome assemblies (not fetched); shuffled + Markov-1 nulls are the standard available substitutes. Details: [`docs/problems_and_decisions.md` § P4-D5](docs/problems_and_decisions.md).
 
@@ -209,6 +220,8 @@ ProstT5's structure-informed encoder, scored with the same held-out-family proto
 
 Structure-aware embedding is a strong Pfam-family separator, just below the pure sequence LM and well above the genomic FM — sensible, since Pfam families are homology-defined so a sequence model is naturally strong; structure is complementary, not superior, for family separation.
 
+![Layer 2 ProstT5 vs sequence and genomic arms](results/figures/layer2_prostt5_summary.png)
+
 > **Honest scope:** scoped to 60 families because a 1.5B T5 encoder on MPS is slow (the blueprint's Layer-2 compute wall); the full 300-family run is a cloud afternoon. Details: [`docs/problems_and_decisions.md` § P4-D6](docs/problems_and_decisions.md).
 
 ---
@@ -216,7 +229,7 @@ Structure-aware embedding is a strong Pfam-family separator, just below the pure
 ## Honest limitations
 
 - The T1 "characterised" signal is a Pfam-37 net-new-family proxy, not full InterProScan against InterPro-latest — narrower than the original design spec, so the true positive count is understated, not overstated.
-- Genos-m ran at 300-family / 6,907-protein scale (a cloud A10G run), not the full 903-family eval, and ProstT5 (Layer 2) at 60 families — both matched against ESM-2 within-eval, but neither at the full scale of the ESM-2 headline. The full-scale runs are recoverable on a rented GPU.
+- Genos-m now has both a full 903-family eval and a matched 300-family comparison against ESM-2 (both cloud A10G runs); ProstT5 (Layer 2) still only ran at 60 families — matched against ESM-2 within-eval, but not at the full scale of the ESM-2 headline. That full-scale ProstT5 run is recoverable on a rented GPU.
 - The retrospective positive set is selection-biased toward near-known genes (characterisation is homology-driven), so Precision@K measures prioritisation value, not "novelty equals characterisability" — stated explicitly, not smoothed over.
 - Layer 3 (immune) underperforms Layer 1 as a standalone detector at every detector count tested up to 20,000; it's reported as a corroborating signal, not a competing one.
 - The full-scale dark-query flagging result uses a stratified 14,138-of-34,138 sample of the dark-query population (all positives, 33% of dark_negatives) — a compute-time scope decision, not a methods one.
@@ -313,7 +326,7 @@ This project doesn't run live infrastructure, so the operational risk here is cl
 >   --lifecycle-configuration '{"Rules":[{"Expiration":{"Days":30},"Status":"Enabled"}]}'
 > ```
 
-The Genos-m comparison did use a rented cloud GPU (AWS A10G) for the 300-family run; the one remaining paid-compute item is scaling it to the full 903-family eval (and ProstT5 to full scale), each roughly a ~$2 rented-GPU afternoon.
+The Genos-m comparison used a rented cloud GPU (AWS A10G): the 300-family matched run, then the full 903-family eval plus Genos-m as a 4th convergence axis on 2026-09-14 (~75 min, ~$1.25). The one remaining paid-compute item is ProstT5 (Layer 2) at full scale, roughly a ~$2 rented-GPU afternoon.
 
 ---
 
