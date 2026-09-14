@@ -167,14 +167,37 @@ def main() -> None:
         qids = qry["protein_id"].tolist()
         print(f"\nembedding {len(qids)} dark queries with ProstT5 (structural novelty axis, length-sorted)...", flush=True)
         t0 = time.time()
-        chunks = []
         CH = 256
-        for a in range(0, len(qids), CH):
-            part = [qseqs[i] for i in qids[a:a + CH]]
-            chunks.append(emb.embed(part, batch_size=args.batch_size))
+        # Per-chunk checkpointing: two prior attempts crashed with CUDA OOM at
+        # ~96.7% through (the longest, length-sorted-to-the-end sequences) and
+        # lost ALL progress since chunks only lived in memory. Now every chunk
+        # is saved to disk as it completes, so a crash only costs one chunk --
+        # a restart skips every chunk whose checkpoint file already exists.
+        ckpt_dir = PROC / "_prostt5_query_chunks"
+        ckpt_dir.mkdir(exist_ok=True)
+        n_chunks = (len(qids) + CH - 1) // CH
+        for ci, a in enumerate(range(0, len(qids), CH)):
+            ckpt = ckpt_dir / f"chunk_{ci:05d}.npy"
             done = min(a + CH, len(qids)); el = time.time() - t0
-            print(f"  {done}/{len(qids)} ({el:.0f}s, {done/el*60:.0f} seqs/min)", flush=True)
-        qvec = np.concatenate(chunks)
+            if ckpt.exists():
+                print(f"  {done}/{len(qids)} chunk {ci+1}/{n_chunks} (cached)", flush=True)
+                continue
+            part = [qseqs[i] for i in qids[a:a + CH]]
+            bs = args.batch_size
+            for attempt in range(4):
+                try:
+                    vec = emb.embed(part, batch_size=bs)
+                    break
+                except RuntimeError as e:
+                    if "out of memory" not in str(e).lower() or attempt == 3:
+                        raise
+                    import torch
+                    torch.cuda.empty_cache()
+                    bs = max(1, bs // 2)
+                    print(f"    OOM on chunk {ci+1}, retrying at batch_size={bs}", flush=True)
+            np.save(ckpt, vec)
+            print(f"  {done}/{len(qids)} chunk {ci+1}/{n_chunks} ({el:.0f}s, {done/max(el,1e-9)*60:.0f} seqs/min)", flush=True)
+        qvec = np.concatenate([np.load(ckpt_dir / f"chunk_{ci:05d}.npy") for ci in range(n_chunks)])
         print(f"  done in {time.time()-t0:.0f}s", flush=True)
         R = vecs / np.clip(np.linalg.norm(vecs, axis=1, keepdims=True), 1e-12, None)
         Q = qvec / np.clip(np.linalg.norm(qvec, axis=1, keepdims=True), 1e-12, None)
