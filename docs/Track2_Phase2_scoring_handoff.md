@@ -160,7 +160,14 @@ Any of these failing is a *finding*, not a bug to hide — log it and raise with
 
 ## Track 2 to confirm / fill
 
-- Exact Stage-3 embedding artifact paths (the config has best-guess `[TODO]`s).
-- The exact recorded Phase-1 panel seed → `config/scorer.yaml: seed`.
-- Whether `phylum` / `length_aa` / `pfam_family` are already in the manifest or need joining from the label outputs.
-- Genos-m arm is **blocked** until the nt embed-path fix (P1-D12) produces `genos-m_panel_embeddings.npy`.
+**Resolved — all items below closed as of Phase 4 (2026-09-14); kept for the historical
+record of what was open at Phase-2 kickoff.**
+
+- Exact Stage-3 embedding artifact paths (the config has best-guess `[TODO]`s). --
+  Resolved: `data/processed/gtdb_R207/` (esm2/genos-m/prostt5 embeddings + novelty scores).
+- The exact recorded Phase-1 panel seed → `config/scorer.yaml: seed`. -- Resolved: `seed: 42`.
+- Whether `phylum` / `length_aa` / `pfam_family` are already in the manifest or need joining
+  from the label outputs. -- Resolved: joined from label outputs, see `embedding_sample.csv`.
+- Genos-m arm is **blocked** until the nt embed-path fix (P1-D12) produces
+  `genos-m_panel_embeddings.npy`. -- Resolved: unblocked by P1-D12; full 903-family Genos-m
+  eval and its use as a Layer-4 convergence axis both completed at P4-D8.
