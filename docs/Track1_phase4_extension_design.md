@@ -2,7 +2,7 @@
 
 **Phase:** 4 — Extension, Analysis & Manuscript (weeks 10–12)
 **Track:** 1 — Methodology, Design & Analysis
-**Status:** BUILT — 3-way (P4-D2 + P4-D4). Axes = ESM-2 EVT embedding novelty + genomic-context novelty + compositional/statistical novelty (the last local, closing blueprint Layer 5 partially; the Genos-m axis is cloud-blocked but wired via `--extra-axis`). Axes largely independent (evt~context −0.05, context~composition +0.01, evt~composition +0.26); all deplete near-known positives (context 0.68×, composition 0.26×, 3-way-convergent 108 genes 0.53×) — every independent novelty line points to the frontier. Convergence beyond chance (108 vs ~32 expected under independence).
+**Status:** BUILT and CLOSED — 3-way headline (P4-D2 + P4-D4), plus 4th (Genos-m, P4-D8) and 5th (ProstT5, P4-D10) axes measured and reported separately with explicit caveats. Headline axes = ESM-2 EVT embedding novelty + genomic-context novelty + compositional/statistical novelty (the last local, closing blueprint Layer 5 partially). Axes largely independent (evt~context -0.05, context~composition +0.01, evt~composition +0.26); all deplete near-known positives (context 0.68x, composition 0.26x, 3-way-convergent 108 genes 0.53x) -- every independent novelty line points to the frontier. Convergence beyond chance (108 vs ~32 expected under independence). Genos-m (4th axis) inverts this pattern (enriches, leakage caveat, P4-D8); ProstT5 (5th axis) is not independent of composition (rho=+0.64, P4-D10) so is reported but not promoted over the 3-axis headline. Neither extra axis changes the 3-axis result.
 **Branch:** `phase-3-track-1-Immune-inspired-self/non-self-discrimination` (Phase-4 work continues here until the phase-4 branch is cut)
 
 ---
@@ -148,12 +148,22 @@ five are now done:
 - **Layer 5 — statistical coding-structure discrimination (P4-D5).** `darkmatter/statistical/`
   (codon-position base bias + k-mer entropy + shuffle/Markov-1 nulls). Coding-vs-noise AUROC
   **0.94** on all 34,138 dark genes → the dark matter is genuinely coding, not spurious ORFs.
-- **Layer 2 — structure-aware embedding via ProstT5 (P4-D6).** `darkmatter/embeddings/prostt5.py`
-  (ProtT5-XL/3Di encoder, the light ESMFold substitute §9). Held-out-family AUROC **0.960**
-  (centered, 60 largest families) — a strong family separator, just below the sequence LM
-  (ESM-2 0.99) and well above the genomic FM (Genos-m 0.74). Scoped to 60 families because
-  a 1.5B T5 encoder on MPS is slow (the blueprint's Layer-2 compute wall); full 300 = cloud.
+- **Layer 2 — structure-aware embedding via ProstT5 (P4-D6, full scale P4-D10).**
+  `darkmatter/embeddings/prostt5.py` (ProtT5-XL/3Di encoder, the light ESMFold substitute
+  §9). Held-out-family AUROC **0.960** (centered) at the full matched 300-family scale
+  (P4-D10; initial P4-D6 measurement was 60 families) -- a strong family separator, just
+  below the sequence LM (ESM-2 0.99) and well above the genomic FM (Genos-m 0.74). Also
+  used as Layer 4's 5th convergence axis (P4-D10); not independent of the compositional
+  axis (rho=+0.64), so reported but not folded into the headline.
+- **True-intergenic Layer-5 controls (P4-D9).** Real non-coding DNA control (not just
+  shuffled/Markov-1 nulls): coding-vs-true-intergenic AUROC **0.78** (44 of 502 panel
+  genomes, bounded-cost sample) -- the harder, more honest number alongside the 0.94
+  against artificial nulls.
+- **Standalone benchmark release (P4-D9).** `scripts/package_benchmark_release.py` ->
+  `benchmark_release/`, a self-contained package (README, checksummed manifest, genome
+  panel, protein labels) usable without the rest of the repo.
 
-**Phase 4 = ALL FIVE BLUEPRINT LAYERS BUILT.** ALL TECHNICAL WORK COMPLETE; only the
-manuscript remains. Optional/cloud-gated: ProstT5 at full 300-family scale + as a 4th
-convergence axis, Genos-m as a convergence axis, true-intergenic Layer-5 controls.
+**Phase 4 = ALL FIVE BLUEPRINT LAYERS BUILT, including every optional/cloud-gated
+extension (P4-D7..D10).** ALL TECHNICAL WORK COMPLETE across the full blueprint; only
+the manuscript remains (user-led), plus Track 1's own open call on whether to re-freeze
+Layer 3's detector-count default (P3-D8), which is outside this project's scope to decide.

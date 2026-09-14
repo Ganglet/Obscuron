@@ -1,0 +1,9 @@
+{
+  "n_genomes_scanned": 44,
+  "n_segments": 81286,
+  "bytes_read_gb": 12.00101376,
+  "intergenic_cpbb_median": 0.030775338811652182,
+  "real_cpbb_median": 0.07210331524885845,
+  "coding_vs_true_intergenic_auroc": 0.7816149472021945,
+  "scope_note": "bounded prefix of the 65GB genome archive, not the full 502-genome panel -- see script docstring; full-panel coverage is optional future work"
+}

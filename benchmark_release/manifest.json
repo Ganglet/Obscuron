@@ -1,0 +1,58 @@
+{
+  "name": "Obscuron retrospective dark-matter benchmark",
+  "version": "1.0",
+  "generated_utc": "2026-09-13T19:31:10.196976+00:00",
+  "source_commit": "fad1e0c",
+  "boundary": {
+    "T0": {
+      "gtdb_release": "R207",
+      "date": "2022-04",
+      "pfam_release": "35.0",
+      "pfam_date": "2021-11"
+    },
+    "T1_proxy": {
+      "gtdb_release": "R232",
+      "date": "2026-04",
+      "pfam_release": "37.0",
+      "pfam_date": "2024-06",
+      "note": "Pfam 37.0 net-new-family proxy stands in for full InterPro-latest (P1-D8); narrower than the true signal, so the true positive count is a floor, not an exact figure."
+    }
+  },
+  "sampling": {
+    "scheme": "proportional-with-floor-cap by GTDB phylum",
+    "target_genomes": 500,
+    "floor": 2,
+    "cap": 30,
+    "seed": 42,
+    "actual_panel_size": 502,
+    "phyla_covered": 189
+  },
+  "labels": {
+    "definition": {
+      "dark_at_t0": "no Pfam-35.0 domain hit at the family gathering (GA) threshold",
+      "characterised_t1_proxy": "hits a Pfam-37.0 family that is new since Pfam-35.0",
+      "positive_proxy": "dark_at_t0 AND characterised_t1_proxy"
+    },
+    "n_proteins": 1341100,
+    "n_dark_at_t0": 297798,
+    "n_characterised_t1_proxy": 51287,
+    "n_positive_proxy": 4138,
+    "dark_fraction": 0.22205502945343375,
+    "positive_fraction_of_all": 0.003085526806352994,
+    "go_no_go_floor": "50-100 positives (pre-registered)",
+    "margin_over_floor": "41-83x (against the 50-100 floor range)"
+  },
+  "files": {
+    "genome_panel.csv": {
+      "rows": 502,
+      "sha256": "97c44fc16e93a5f6ae799b5e72c74ceea88ee95f03e8e4fdbc1d68075284c8ad"
+    },
+    "protein_labels.csv": {
+      "rows": 1341100,
+      "sha256": "f0793475646061e66440f751cc17bb1b35d7d5cf56e7993a01375b6a1ca0ab8d"
+    }
+  },
+  "not_included": "Raw sequences (protein/nucleotide FASTA) and embeddings are not shipped: they are large, regenerable, and freely re-downloadable from GTDB's own public mirror by the accessions in genome_panel.csv. See README.md in this directory for the exact fetch commands.",
+  "license": "MIT (see LICENSE)",
+  "citation": "See the parent repository's README.md for the paper citation once published."
+}
