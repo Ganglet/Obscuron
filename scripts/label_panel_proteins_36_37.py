@@ -48,9 +48,9 @@ from darkmatter.experiment_log import log_experiment
 PROC_ROOT = Path(__file__).resolve().parents[1] / "data" / "processed"
 RAW_ROOT = Path(__file__).resolve().parents[1] / "data" / "raw"
 
-PFAM36_HMM = RAW_ROOT / "pfam_36.0" / "Pfam-A.hmm.gz"
+PFAM36_HMM = RAW_ROOT / "pfam_36.0" / "Pfam-A.hmm"
 PFAM36_CLANS = RAW_ROOT / "pfam_36.0" / "Pfam-A.clans.tsv.gz"
-PFAM37_HMM = RAW_ROOT / "pfam_37.0" / "Pfam-A.hmm.gz"
+PFAM37_HMM = RAW_ROOT / "pfam_37.0" / "Pfam-A.hmm"
 PFAM37_CLANS = RAW_ROOT / "pfam_37.0" / "Pfam-A.clans.tsv.gz"
 
 CSV_HEADER = ["genome_accession", "protein_id", "dark_at_36", "characterised_37_since_36", "positive_36_37"]
@@ -118,6 +118,7 @@ def main() -> None:
         raise SystemExit(f"no protein files in {proteins_dir}")
 
     out_path = PROC_ROOT / "gtdb_R207" / "panel_protein_labels_36_37.csv"
+    done_marker = PROC_ROOT / "gtdb_R207" / "panel_protein_labels_36_37.DONE"
     done = _already_labeled_genomes(out_path)
     remaining = [f for f in faa_files if f.name.removesuffix("_protein.faa") not in done]
 
@@ -125,6 +126,7 @@ def main() -> None:
     if not remaining:
         n_total, n_dark, n_char, n_pos = _summarize(out_path)
         print(f"{n_total} proteins, dark-at-36 {n_dark} ({100*n_dark/n_total:.2f}%), positive-36-37 {n_pos} ({100*n_pos/n_total:.3f}%)")
+        done_marker.touch()
         return
 
     print("loading pfam family diff (36.0 -> 37.0)...", flush=True)
@@ -146,6 +148,7 @@ def main() -> None:
     print(f"dark-at-36: {n_dark} ({100*n_dark/n_total:.2f}%)")
     print(f"characterised-37-since-36: {n_char} ({100*n_char/n_total:.2f}%)")
     print(f"positive-36-37 (dark-at-36 AND characterised-since-36): {n_pos} ({100*n_pos/n_total:.3f}%)")
+    done_marker.touch()
 
     log_experiment(
         title="full-panel 36->37 boundary labeling (leakage-tightened, Genos-m axis follow-up)",
