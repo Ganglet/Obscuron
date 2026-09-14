@@ -101,3 +101,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: 80-genome/12GB/30min bounded stream of GTDB R207 genome-assembly archive (65GB), intergenic segments >=60bp between Prodigal gene coordinates; benchmark_release/ packaged from genome_panel.csv + panel_protein_labels.csv
 - Result: 44 genomes (12GB byte cap bound first), 81286 intergenic segments; real CPBB median 0.0721 (matches P4-D5) vs true-intergenic 0.0308 (vs shuffle/markov1 0.011); coding-vs-true-intergenic AUROC=0.7816 (vs 0.94 against artificial nulls -- a harder, more honest control); one mid-run network interruption (IncompleteRead at 2.26GB) recovered via retry-wrapper on attempt 1
 - Next: fold into manuscript Layer 5 section + limitations; benchmark_release/ needs no further action, packaging complete
+
+## 2026-09-14 -- prostt5 full 300-family scale + 5th convergence axis (local, 8GB gpu, checkpointed)
+- Commit: pending
+- Config: run_layer2_prostt5.py --eval-only --score-queries --batch-size 2, 300 families / 6907 reference proteins (unchanged from P4-D6), 34138 dark queries, length-sorted chunking (CH=256) with per-chunk checkpointing + OOM backoff (halves batch_size on CUDA OOM, up to 4 attempts)
+- Result: full-300-family AUROC raw=0.9332 mean/0.9454 median, centered=0.9437/0.9599 (300 families) -- confirms P4-D6's 60-family estimate direction; ProstT5-as-5th-axis convergence on 31712 queries -- ProstT5~composition rho=0.64 (highest pairwise value, i.e. NOT independent), ProstT5~genos-m rho=-0.43, ProstT5-top-10% lift=0.28x (depletes, same direction as composition); 5-way convergent set n=20, lift=1.24x (vs 4-way n=35, lift=0.94x from P4-D8)
+- Next: report to Track 1 -- ProstT5 axis is measured but not promoted over the 3-axis headline (P4-D1/D2/D4) since it is not independent of composition; a genuinely independent structural axis (contact-map or secondary-structure-derived, not mean-pooled kNN) is future work
