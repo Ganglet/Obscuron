@@ -107,3 +107,15 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: run_layer2_prostt5.py --eval-only --score-queries --batch-size 2, 300 families / 6907 reference proteins (unchanged from P4-D6), 34138 dark queries, length-sorted chunking (CH=256) with per-chunk checkpointing + OOM backoff (halves batch_size on CUDA OOM, up to 4 attempts)
 - Result: full-300-family AUROC raw=0.9332 mean/0.9454 median, centered=0.9437/0.9599 (300 families) -- confirms P4-D6's 60-family estimate direction; ProstT5-as-5th-axis convergence on 31712 queries -- ProstT5~composition rho=0.64 (highest pairwise value, i.e. NOT independent), ProstT5~genos-m rho=-0.43, ProstT5-top-10% lift=0.28x (depletes, same direction as composition); 5-way convergent set n=20, lift=1.24x (vs 4-way n=35, lift=0.94x from P4-D8)
 - Next: report to Track 1 -- ProstT5 axis is measured but not promoted over the 3-axis headline (P4-D1/D2/D4) since it is not independent of composition; a genuinely independent structural axis (contact-map or secondary-structure-derived, not mean-pooled kNN) is future work
+
+## 2026-09-14 — full-panel 36->37 boundary labeling (leakage-tightened, Genos-m axis follow-up)
+- Commit: f6f4204
+- Config: pfam-36 GA dark-at-36 / pfam-37 net-new-family characterised-since-36, batch-size=25, full 502-genome panel
+- Result: 1341100 proteins; dark-at-36 292995 (21.85%); characterised-37-since-36 31308 (2.33%); positive-36-37 2448 (0.183%)
+- Next: cross-reference against genos-m_novelty_scores.csv to recompute the convergence-axis lift on this leakage-tightened positive set
+
+## 2026-09-14 -- genos-m axis lift re-test under leakage-tightened boundary (P4-D11)
+- Commit: pending
+- Config: scripts/genosm_leakage_relift.py, top-decile (quantile=0.90) on genos_m_novelty, same 34,138-query set as P4-D8, positive label swapped from panel_protein_labels.csv (35->37) to panel_protein_labels_36_37.csv (36->37)
+- Result: 2385/34138 queries positive under 36-37 (vs 4138 under 35-37); main-boundary lift recomputed 1.32x (matches P4-D8's reported 1.30x); leakage-tightened lift 1.26x -- only a ~5% relative drop despite the positive set shrinking 43%; all 2385 leakage-tightened positives are a subset of the main-boundary positives (clean consistency check)
+- Next: the enrichment surviving this tightening weakens (does not confirm) the pure-leakage explanation for the genos-m axis inversion -- update manuscript's Layer 4/Discussion framing from "plausibly leakage" to "leading, not confirmed, hypothesis"
