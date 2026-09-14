@@ -95,3 +95,9 @@ Entries start once there's a result worth recording (Phase 2 onward).
 - Config: layers 12,9; O(N^2)-fixed reembed_eval.py; embed_genos_m_dark_queries.py on all 34,138 dark queries; run_convergence.py --extra-axis composition_novelty.csv --extra-axis genos-m_novelty_scores.csv
 - Result: full-903-family AUROC layer 9 raw=0.665 mean/0.703 median (vs 300-family-capped 0.739/0.795); 4-axis convergence on 31,712 queries -- genos-m~evt rho=0.15, genos-m~context rho=-0.05, genos-m~composition rho=-0.32; genos-m-top-10% positive-rate lift=1.30x (the only axis that enriches, likely leakage-driven per P1-D7/P2-D7); 4-way convergent set n=35, lift=0.94x
 - Next: report to Track 1 -- the leakage caveat on the genos-m lift needs to land in the manuscript alongside the number, not just the number; fold corrected full-scale genos-m AUROC into any place the 300-family estimate was cited
+
+## 2026-09-14 -- true-intergenic layer 5 controls + standalone benchmark release
+- Commit: pending
+- Config: 80-genome/12GB/30min bounded stream of GTDB R207 genome-assembly archive (65GB), intergenic segments >=60bp between Prodigal gene coordinates; benchmark_release/ packaged from genome_panel.csv + panel_protein_labels.csv
+- Result: 44 genomes (12GB byte cap bound first), 81286 intergenic segments; real CPBB median 0.0721 (matches P4-D5) vs true-intergenic 0.0308 (vs shuffle/markov1 0.011); coding-vs-true-intergenic AUROC=0.7816 (vs 0.94 against artificial nulls -- a harder, more honest control); one mid-run network interruption (IncompleteRead at 2.26GB) recovered via retry-wrapper on attempt 1
+- Next: fold into manuscript Layer 5 section + limitations; benchmark_release/ needs no further action, packaging complete
