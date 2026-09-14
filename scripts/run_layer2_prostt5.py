@@ -156,10 +156,25 @@ def main() -> None:
             by_genome.setdefault(r["genome_accession"], set()).add(r["protein_id"])
         qseqs = _load_seqs(by_genome)
         qry = qry[qry["protein_id"].isin(qseqs)].reset_index(drop=True)
+        # length-sort so each batch is length-homogeneous -> minimal padding,
+        # the same fix that made the reference embed tractable; the earlier,
+        # unsorted version of this loop took 5+ hours on 34,138 queries with
+        # zero progress visibility because random-length batches each pay
+        # the padding cost of their longest member, scattered throughout
+        # rather than only at the end.
+        qry["_len"] = qry["protein_id"].map(lambda i: len(qseqs[i]))
+        qry = qry.sort_values("_len").reset_index(drop=True)
         qids = qry["protein_id"].tolist()
-        print(f"\nembedding {len(qids)} dark queries with ProstT5 (structural novelty axis)...", flush=True)
+        print(f"\nembedding {len(qids)} dark queries with ProstT5 (structural novelty axis, length-sorted)...", flush=True)
         t0 = time.time()
-        qvec = emb.embed([qseqs[i] for i in qids], batch_size=args.batch_size)
+        chunks = []
+        CH = 256
+        for a in range(0, len(qids), CH):
+            part = [qseqs[i] for i in qids[a:a + CH]]
+            chunks.append(emb.embed(part, batch_size=args.batch_size))
+            done = min(a + CH, len(qids)); el = time.time() - t0
+            print(f"  {done}/{len(qids)} ({el:.0f}s, {done/el*60:.0f} seqs/min)", flush=True)
+        qvec = np.concatenate(chunks)
         print(f"  done in {time.time()-t0:.0f}s", flush=True)
         R = vecs / np.clip(np.linalg.norm(vecs, axis=1, keepdims=True), 1e-12, None)
         Q = qvec / np.clip(np.linalg.norm(qvec, axis=1, keepdims=True), 1e-12, None)
