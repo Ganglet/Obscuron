@@ -1,0 +1,53 @@
+# EVT Novelty Scorer: Implementation, Evaluation & the Layer-Selection Fix
+
+**Phase:** 2 — Calibrated Novelty Scoring (Layer 1)
+**Owner:** Track 2 (Rayyan)
+**Branch:** `phase-2-track-2-evt-implementation`
+**Status:** Complete. Scorer implemented and validated end-to-end (ESM-2 arm first, then Genos-m); definitive full-scale AUROC 0.962 mean / 0.985 median at layer 22. See P2-D6 through P2-D11 in `docs/problems_and_decisions.md` for the full decision-log entries this doc summarizes and expands on. Track 1's Phase-2 design work (the scorer spec, frozen hyperparameters, P2-D1..D5) lives in `docs/Track1_phase2_scorer_design.md` and the interface contract in `docs/Track2_Phase2_scoring_handoff.md`.
+
+## Objective
+
+Implement Track 1's frozen Phase-2 design (P2-D1..D5: EVT/GPD tail calibration on kNN cosine distance, characterised-at-T0 reference vs dark-at-T0 queries, held-out-family AUROC + Precision@K + calibration as the three frozen metrics) end-to-end for the ESM-2 arm first, per the hand-off contract, then extend to Genos-m once its embeddings existed.
+
+## What Was Done
+
+- **`darkmatter/scoring/` + `scripts/embed_novelty_scorer.py` / `evaluate_scorer.py` / `heldout_family_eval.py`**: built the scorer against the frozen design -- mean-of-k cosine distance to the characterised reference, leave-one-out calibration, GPD tail fit above the 90th-percentile threshold, `p(x)` -> novelty `s(x) = 1 - p(x)`.
+- **First full ESM-2 scored run** (leakage-clean headline, 1,341,100 proteins -> 297,798 dark-at-T0, 4,138 positives): GPD tail fit sound (xi=0.0998, beta=0.00586, KS p=0.984); held-out-family AUROC median 0.906 / mean 0.871 (500 families); calibration monotonic and tracking the diagonal (observed novel-rate 2.1%->91.2% across score bins). Precision@K lift was **below 1 everywhere** (0.00 at K=50/100, 0.23x at K=500, 0.50x at K=1000) -- flagged this to Track 1 as the P2-D3 selection-bias finding in its strongest form (an inversion) rather than treating it as a scorer bug, and did not re-tune k or the threshold to chase lift above 1 (anti-fishing, P2-D5).
+- **Genome-vs-protein comparison + anisotropy diagnostic**: the matched 100-seq/20-family separation set showed a raw last-layer cosine gap of ESM-2 0.036 vs Genos-m 0.0042 -- an apparent 8.5x ESM-2 win. Genos-m's cosines pinning at ~0.99 looked suspicious, so built `scripts/diagnose_layers.py` (per-layer x {raw, mean-centered} for both models on the same 100 sequences). Found the collapse was two stacked artifacts, not model weakness: anisotropy (a shared mean direction dominating raw cosine -- centering lifts every Genos-m layer's gap from ~0.004 to 0.40-0.65) and last-layer specialization (both models peak at ~2/3 depth and decay by the final layer). Fair comparison at the best mid-late layer, mean-centered: ESM-2 0.790 (layer 22/34) vs Genos-m 0.647 (layer 9/13) -- ESM-2 leads ~1.2x, not 8.5x. Hit a real gotcha along the way: ESM-2's intermediate hidden states overflow fp16 on MPS into NaN layers, so the sweep needed `--fp32` (Genos-m fp16 stayed NaN-free and valid).
+- **`scripts/test_layer_scorer.py`**: tested whether the layer/centering fix actually improves the *scorer's* headline metric, not just the raw separation gap, by running the held-out-family protocol per layer x {raw, centered} on the saved 100-seq diagnostic vectors. ESM-2 mini AUROC: last-layer/raw 0.691 (what the scorer used at the time) -> a broad mid-late plateau (layers 14-28) around 0.95 -> layer-18/22 centered around 0.96-0.98. Deliberately did **not** pick the layer that maximised this small-set AUROC (that would be selection-on-the-test) -- picked layer 22 by the independent separation-gap criterion instead, matching the broad plateau rather than one cherry-picked point.
+- **Full-panel ESM-2 re-embed, the definitive run**: ran `scripts/reembed_eval.py --model esm2 --layers 33,22 --fp32` -- the 15,360 single-hit characterised reference proteins, at both the last layer and layer 22, fp32, on the M1 Pro. **Held-out-family AUROC (903 of 3,109 families with >=5 members, k=5): last-layer 0.786 mean / 0.815 median -> layer-22 0.962 / 0.985** -- a +0.176 mean lift within one consistent eval, clearing the earlier independent 0.906 baseline outright. Centering turned out negligible on AUROC (33: 0.786->0.783; 22: 0.962->0.961) -- for the scorer itself, the entire win is layer choice, not centering; the anisotropy direction that mattered so much for the raw separation-gap diagnostic cancels out in a rank-based metric like AUROC. Added `--eval-only` to `reembed_eval.py` so any future eval tweak re-runs from the saved `.npz` in minutes instead of re-embedding (validated by reproducing the exact same numbers from the cache).
+- **Genos-m comparison arm, deferred then completed**: the full-scale Genos-m cloud run was initially blocked -- the local RTX 4060 can't run Genos-m, and the first AWS attempt hit the Free-Plan wall (g5 GPU instances require a paid plan). Reported the comparison at the matched 100-seq/20-family scale instead (ESM-2 0.79 vs Genos-m 0.65 separation gap; 0.98 vs 0.82 held-out AUROC) rather than blocking Phase 2 on the cloud run. Once AWS access was resolved, ran it for real on `g5.xlarge` (A10G) against the real 502-genome nucleotide panel, using `reembed_eval.py --model genos-m --layers 12,9`, capped to the 300 largest families (6,907 sequences -- the full 3,109-family run was many hours at the time, since the eval loop still recomputed the reference-vs-reference kNN per held-out family; the O(N^2) fix that removed this cost came later, Phase 4 P4-D7). Result: Genos-m held-out-family AUROC L12(last) 0.570/0.580, L9(best) **0.739/0.795**; centering neutral-to-slightly-negative.
+- **Fair within-eval comparison, not cross-eval**: reproduced ESM-2 on the exact same 300-family eval locally (after teaching `--eval-only` to honour `--max-families`), confirming an exact 6,907-sequence reference match to the Genos-m run (same underlying family set). ESM-2 on this eval: L33(last) 0.854/0.875, **L22(best) 0.988/0.996**. This corrected an earlier cross-eval framing mistake that had compared Genos-m's best layer against ESM-2's last-layer number from a *different* (500-family) eval and read the gap as ~0.10-0.11 -- the true matched, best-vs-best gap is ~0.25 mean. Also confirmed the layer-choice finding generalises across both models (mid-late layer beats last layer for both, centering neutral for both), and surfaced the family-capping caveat later generalised project-wide in Phase 4 (P4-D7/D8): the 300-largest-family cap reads higher than the full 903/3,109-family eval for both arms, so it's fair for a same-eval comparison but not the number to report as either model's headline.
+
+## Why (Key Decisions)
+
+**Why not chase Precision@K lift above 1 by re-tuning k or the threshold?**
+The hyperparameters were frozen before any result existed specifically to prevent this (P2-D5). The held-out-family AUROC (controlled ground truth, no selection bias) already proved the scorer detects real novelty, so the Precision@K inversion is a property of the retrospective label, not the scorer -- reporting and interpreting it is the correct move, not tuning it away.
+
+**Why pick the layer by the separation-gap criterion instead of by which layer maximises the mini-eval's AUROC?**
+Picking the layer that maximises the very metric being reported is selection-on-the-test -- it would make the number a fitted result, not a measured one. The separation-gap criterion was independent of the AUROC being validated, and the fact that AUROC turned out to plateau broadly across layers 14-28 (not spike at one point) confirms the chosen layer wasn't a lucky pick.
+
+**Why fp32 for the ESM-2 layer sweep?**
+fp16 intermediate hidden states overflowed into NaN on MPS partway through the network -- a real numerical-precision gotcha, not a performance choice. Genos-m's fp16 run stayed NaN-free so it didn't need the same fix, but the asymmetry meant the two models' sweeps weren't run under identical precision, a caveat carried forward rather than hidden.
+
+**Why report the matched-scale Genos-m comparison instead of blocking Phase 2 on the cloud run?**
+The full-scale run was genuinely blocked on infrastructure outside this project's control (AWS plan tier) at the time, and the matched-scale numbers were already a legitimate apples-to-apples comparison. Blocking phase close on a paid-cloud dependency that couldn't be resolved immediately would have cost more than it protected; the full-scale run happened anyway once access cleared, without needing to have waited on it.
+
+**Why re-derive ESM-2 on the exact same 300-family eval instead of just citing the existing 500-family number?**
+A cross-eval comparison (Genos-m's 300-family number against ESM-2's differently-sampled 500-family number) silently mixes two different difficulty levels into one gap estimate. Reproducing ESM-2 on the identical family set removes that confound -- the resulting gap (~0.25) is the trustworthy one, and the original ~0.10-0.11 framing was flagged and corrected rather than left standing.
+
+## Outputs
+
+| Output | Description |
+|---|---|
+| `darkmatter/scoring/` | EVT/GPD novelty scorer implementation. |
+| `scripts/embed_novelty_scorer.py`, `evaluate_scorer.py`, `heldout_family_eval.py` | Scoring, Precision@K/calibration, and held-out-family AUROC drivers. |
+| `scripts/diagnose_layers.py` | Per-layer x {raw, centered} separation diagnostic, both models. |
+| `scripts/test_layer_scorer.py` | Layer/centering held-out-family AUROC proxy test (mini-scale). |
+| `scripts/reembed_eval.py` | Full-panel re-embed + held-out-family eval driver, with `--eval-only` fast path and `--max-families` cap. |
+| `data/processed/gtdb_R207/{esm2,genos-m}_layer_diagnostic.npz` | Per-layer diagnostic vectors, both models, 100-seq matched set. |
+| `data/processed/gtdb_R207/esm2_reembed_L33_22.npz` | Full 15,360-protein reference, layers 33 and 22, fp32 -- reused directly by Layer 3 (Phase 3). |
+| `results/heldout_esm2_calibration.csv` | Held-out-family calibration curve data. |
+| `config/scorer.yaml` | Frozen scorer hyperparameters (k, GPD threshold rule, Precision@K values, held-out-family sampling). |
+
+**Next:** reported to Track 1 for interpretation against the acceptance sanity checks in `docs/Track2_Phase2_scoring_handoff.md`; the definitive layer-22 AUROC (0.962/0.985) became the project's headline number. `esm2_reembed_L33_22.npz` (this phase's output) is reused with no re-embed by Phase 3's Layer 3 build (P3-D1). The 300-family family-capping caveat found here recurs and is resolved project-wide in Phase 4 (P4-D7/D8).

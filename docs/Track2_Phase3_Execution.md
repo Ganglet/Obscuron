@@ -7,7 +7,7 @@
 
 ## Objective
 
-Track 1 (the user) built and reserved Layer 3's core module (`darkmatter/immune/`, V-detector negative selection with self-tolerance calibration) and delivered its first result (P3-D6: calibration works, detection is a weaker-but-honest complement to Layer 1). Per the design doc's own division of labour, Track 2's half was to sweep the frozen hyperparameters for headroom, scale flagging to the real dark-query population (not just the held-out-family reference test), and report whatever the numbers actually say — including anything that disagrees with Layer 1.
+Track 1 (Angshuman) built and reserved Layer 3's core module (`darkmatter/immune/`, V-detector negative selection with self-tolerance calibration) and delivered its first result (P3-D6: calibration works, detection is a weaker-but-honest complement to Layer 1). Per the design doc's own division of labour, Track 2's half was to sweep the frozen hyperparameters for headroom, scale flagging to the real dark-query population (not just the held-out-family reference test), and report whatever the numbers actually say — including anything that disagrees with Layer 1.
 
 ## What Was Done
 
