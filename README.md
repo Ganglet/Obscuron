@@ -5,6 +5,10 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![PyTorch](https://img.shields.io/badge/PyTorch-%3E%3D2.4-ee4c2c)](pyproject.toml)
 [![Status](https://img.shields.io/badge/status-all%205%20layers%20built%20%C2%B7%20manuscript%20pending-brightgreen)](docs/problems_and_decisions.md)
+[![Website](https://img.shields.io/badge/website-live-2C5A4B)](http://obscuron-site-067620369122.s3-website-us-east-1.amazonaws.com)
+
+**Live project page:** http://obscuron-site-067620369122.s3-website-us-east-1.amazonaws.com
+(source: [`web/index.html`](web/index.html); hosted on S3 static website hosting, HTTP only — CloudFront/HTTPS is pending AWS account verification)
 
 ---
 
@@ -258,6 +262,7 @@ Obscuron/
 ├── docs/                     # design docs, decision log, experiment log, reproducibility notes
 ├── results/                  # committed derived artifacts: CSVs, JSON summaries, figures
 ├── paper_draft/               # manuscript draft (gitignored — work in progress)
+├── web/                       # project landing page (index.html), deployed to S3 — see Live project page above
 ├── data/                      # gitignored — snapshots, sequences, embeddings (built locally)
 ├── figures/                   # gitignored — scratch evaluation output
 ├── pyproject.toml             # uv-managed dependencies (Python 3.11+)
@@ -318,7 +323,7 @@ uv run python scripts/immune_sweep.py
 
 ## Data & cost hygiene
 
-This project doesn't run live infrastructure, so the operational risk here is cloud storage cost, not uptime. **The standing rule (P1-D4): stream public data through the pipeline and persist only derived artifacts — embeddings, labels, manifests — never warehouse the raw GTDB/Pfam downloads.**
+The pipeline itself doesn't run live infrastructure, so its operational risk is cloud storage cost, not uptime. **The standing rule (P1-D4): stream public data through the pipeline and persist only derived artifacts — embeddings, labels, manifests — never warehouse the raw GTDB/Pfam downloads.** (The one exception is the project's own static site — see [Live project page](#obscuron) above — a low-cost, low-risk S3-hosted page, not a data-processing dependency.)
 
 > Born from a real bill: an earlier iteration staged the full GTDB R207 protein FASTA set on S3 and racked up roughly $12 over 3 months for ~166GB of duplicated, freely re-downloadable data. If any S3 staging is used for a one-off run, apply a 30–60 day lifecycle expiry:
 > ```bash

@@ -144,5 +144,24 @@
     "extra": {
       "metadata_only": false
     }
+  },
+  {
+    "source": "pfam",
+    "release": "36.0",
+    "fetched_at_utc": "2026-09-14T05:02:18.720869+00:00",
+    "files": [
+      {
+        "path": "E:\\dark_matter\\data\\raw\\pfam_36.0\\Pfam-A.clans.tsv.gz",
+        "size_bytes": 385923
+      },
+      {
+        "path": "E:\\dark_matter\\data\\raw\\pfam_36.0\\Pfam-A.hmm.gz",
+        "size_bytes": 299797995
+      }
+    ],
+    "host": "RAYYAN",
+    "extra": {
+      "metadata_only": false
+    }
   }
 ]

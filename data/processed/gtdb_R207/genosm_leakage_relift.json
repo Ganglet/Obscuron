@@ -1,0 +1,20 @@
+{
+  "n_queries_matched": 34138,
+  "main_boundary_35_37": {
+    "n_total": 34138,
+    "n_positive": 4138,
+    "base_rate": 0.12121389653758276,
+    "n_top_decile": 3414,
+    "top_decile_positive_rate": 0.15992970123022848,
+    "lift": 1.3194007106325616
+  },
+  "leakage_tightened_36_37": {
+    "n_total": 34138,
+    "n_positive": 2385,
+    "base_rate": 0.06986349522526217,
+    "n_top_decile": 3414,
+    "top_decile_positive_rate": 0.08816637375512595,
+    "lift": 1.2619805732714842
+  },
+  "n_positive_both_boundaries": 2385
+}
