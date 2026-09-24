@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
 [![PyTorch](https://img.shields.io/badge/PyTorch-%3E%3D2.4-ee4c2c)](pyproject.toml)
-[![Status](https://img.shields.io/badge/status-all%205%20layers%20built%20%C2%B7%20manuscript%20pending-brightgreen)](docs/problems_and_decisions.md)
+[![Status](https://img.shields.io/badge/status-technical%20work%20closed%20%C2%B7%20manuscript%20pending%20submission-brightgreen)](docs/problems_and_decisions.md)
 [![Website](https://img.shields.io/badge/website-live-2C5A4B)](http://obscuron-site-067620369122.s3-website-us-east-1.amazonaws.com)
 
 **Live project page:** http://obscuron-site-067620369122.s3-website-us-east-1.amazonaws.com
@@ -18,7 +18,7 @@ Most sequenced microbial genes have no functional annotation, because annotation
 
 ---
 
-> **Status: all technical work of a 4-phase capstone is complete on both tracks — the benchmark + go/no-go gate, the Layer-1 EVT scorer, the Layer-3 immune self/non-self layer, and the Phase-4 extension, which grew to cover all five blueprint layers: Layer 4 multi-signal convergence, Layer 5 coding-structure discrimination, and Layer 2 structure-aware embedding (ProstT5). The full-scale Genos-m comparison is done. Only the manuscript remains. This is research code from a final-year B.Tech capstone (MPSTME, NMIMS Hyderabad) targeting ACM-BCB 2027, not a packaged library.**
+> **Status: the technical work of this 4-phase capstone is closed on both tracks — the benchmark + go/no-go gate, the Layer-1 EVT scorer, the Layer-3 immune self/non-self layer, and the Phase-4 extension covering all five blueprint layers (Layer 2 ProstT5 at full scale, Layer 4 multi-signal convergence with five axes, Layer 5 coding-structure discrimination with a true-intergenic control), plus the full-scale Genos-m comparison and a leakage-tightened re-test of the Genos-m axis. Track 1 declined to re-freeze Layer 3's detector count, so its frozen default stands (P3-D8). Only manuscript proofreading and submission remain. This is research code from a final-year B.Tech capstone (MPSTME, NMIMS Hyderabad) targeting ACM-BCB 2027, not a packaged library.**
 
 ---
 
@@ -169,16 +169,17 @@ The genomic FM is a real signal (well above chance) but a distinctly weaker dete
 | Held-out-self flag rate (target ≤ 0.05) | 0.023 |
 | Held-out-family AUROC (60 families, original build) | 0.62 mean / 0.53 median |
 | Held-out-family AUROC (swept to 20,000 detectors) | 0.86 mean |
+| Held-out-family AUROC (measured saturation, ~30,000+ detectors) | 0.89 mean (plateau) |
 | Full-scale convergence with Layer 1 (14,138 real dark queries) | Spearman ρ = 0.485 |
 | Full-scale non-self flag rate | 11.9% of dark queries — 20.1% of eventual positives vs. 8.6% of still-dark |
 
 ![Immune layer sweep summary](results/figures/immune_sweep_summary.png)
 
-> **Honest scope:** as a standalone detector, Layer 3 stays below Layer 1 even at its best swept setting (0.86 vs. 0.962) — it was designed to *corroborate* Layer 1 via an independently-derived signal, not to beat it. The frozen production config (5,000 detectors) sits at 0.74, well below what more detectors would buy; that headroom is flagged, not yet acted on. Details: [`docs/problems_and_decisions.md` § P3-D6, P3-D7](docs/problems_and_decisions.md).
+> **Honest scope:** as a standalone detector, Layer 3 stays below Layer 1 even at its measured ceiling (0.89 vs. 0.962) — it was designed to *corroborate* Layer 1 via an independently-derived signal, not to beat it. The frozen production config (5,000 detectors) sits at 0.74, below what more detectors would buy. Track 1 reviewed that headroom and **declined to re-freeze**, so the frozen default stands and the paper reports 0.74 as the as-shipped number with 0.89 as a sensitivity result. Details: [`docs/problems_and_decisions.md` § P3-D6, P3-D7, P3-D8](docs/problems_and_decisions.md).
 
-### 5. Layer 4 multi-signal convergence — independent axes agree beyond chance, with one leakage-flagged exception
+### 5. Layer 4 multi-signal convergence — independent axes agree beyond chance, with two reported-but-not-promoted exceptions
 
-Four novelty axes of different kinds — Layer-1 EVT embedding novelty, an embedding-free genomic-context novelty, a sequence-composition novelty, and (added 2026-09-14) Genos-m's own kNN novelty — combined so a gene is high-confidence novel only where they agree.
+Five novelty axes of different kinds — Layer-1 EVT embedding novelty, an embedding-free genomic-context novelty, a sequence-composition novelty, and (added 2026-09-14) Genos-m's and ProstT5's own kNN novelty — combined so a gene is high-confidence novel only where they agree.
 
 | Axis pair | Spearman | Reading |
 |---|---|---|
@@ -188,12 +189,18 @@ Four novelty axes of different kinds — Layer-1 EVT embedding novelty, an embed
 | EVT ~ genos-m | +0.15 | weak-moderate |
 | genomic-context ~ genos-m | −0.05 | independent |
 | composition ~ genos-m | −0.32 | moderate, negative |
+| EVT ~ ProstT5 | +0.15 | weak-moderate |
+| genomic-context ~ ProstT5 | +0.06 | independent |
+| composition ~ ProstT5 | **+0.64** | **not independent** (restates composition) |
+| genos-m ~ ProstT5 | −0.43 | moderate, negative |
 
 The first three axes are largely independent, so their convergence is genuine multi-evidence, not one signal restated. The 3-way convergent set is **108 genes = 3.4× more than chance would give** under independence, and evt/context/composition all *deplete* the near-known positives (lifts 1.00×/0.68×/0.26×) — consistent with novelty anti-predicting near-term characterisation.
 
 **Genos-m breaks that pattern: its top-10% novelty *enriches* for positives (lift 1.30×)** — the only axis in the whole project that points this direction.
 
-> **Honest scope, not a 4th independent line of evidence:** Genos-m's pretraining saw GTDB R220, which sits inside this benchmark's T0→T1 window — the same leakage this project controls for everywhere else (P1-D7). The 1.30× lift is more plausibly elevated familiarity with genes Genos-m partially memorised during pretraining than genuine far-from-self novelty, so it's reported as a flagged leakage artifact, not folded into the "independent lines converge" story. The 4-way convergent set (all four axes, n=35, lift 0.94×) reads close to neutral for exactly this reason — genos-m's enrichment partially cancels the other three axes' depletion. Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4/D8](docs/problems_and_decisions.md).
+> **Honest scope, not a 4th independent line of evidence:** Genos-m's pretraining saw GTDB R220, which sits inside this benchmark's T0→T1 window — the same leakage this project controls for everywhere else (P1-D7). Leakage is the leading explanation for the 1.30× lift, so the axis is reported with a caveat, not folded into the "independent lines converge" story. **A direct test (P4-D11) did not confirm it:** re-scoring under the tightest boundary the Pfam releases allow (Pfam 36→37, 2,448 positives full-panel) shrank the positive set 43% but only moved the Genos-m lift from 1.32× to 1.26×, so leakage stays a leading, unconfirmed hypothesis rather than an established cause. The 4-way convergent set (n=35, lift 0.94×) reads close to neutral because Genos-m's enrichment partially cancels the other three axes' depletion.
+>
+> **ProstT5 as a 5th axis is not independent of composition** (ρ = +0.64) and depletes positives in the same direction (lift 0.28×); the 5-way set is 20 genes at 1.24×. It is reported for completeness, not promoted over the 3-axis headline. Details: [`docs/problems_and_decisions.md` § P4-D1/D2/D4/D8/D10/D11](docs/problems_and_decisions.md).
 
 ![Layer 4 multi-signal convergence](results/figures/layer4_convergence_summary.png)
 
@@ -210,35 +217,38 @@ The dark matter carries genuine reading-frame structure, i.e. these are real ORF
 
 ![Layer 5 coding-structure vs nulls](results/figures/layer5_coding_structure_summary.png)
 
-> **Honest scope:** true intergenic controls need full genome assemblies (not fetched); shuffled + Markov-1 nulls are the standard available substitutes. Details: [`docs/problems_and_decisions.md` § P4-D5](docs/problems_and_decisions.md).
+**True-intergenic control (P4-D9):** streaming real genome assemblies and extracting the sequence between gene calls (44 panel genomes, 81,286 segments) gives a harder, more realistic negative than the artificial nulls: intergenic codon-position bias has median 0.031 (vs 0.011 for shuffle/Markov-1), and coding-vs-true-intergenic AUROC is **0.78**. That is the more trustworthy number to quote; 0.94 is against artificial nulls.
+
+> **Honest scope:** the intergenic control covers 44 of 502 panel genomes (a bounded-cost sample), not the full panel. Details: [`docs/problems_and_decisions.md` § P4-D5, P4-D9](docs/problems_and_decisions.md).
 
 ### 7. Layer 2 structure-aware embedding (ProstT5) — strong, just below the sequence LM
 
-ProstT5's structure-informed encoder, scored with the same held-out-family protocol on the 60 largest families (2,698 proteins, exact-count-matched to ESM-2):
+ProstT5's structure-informed encoder, scored with the same held-out-family protocol on the 300 largest families (6,907 proteins, matched to the ESM-2/Genos-m comparison; an earlier 60-family pilot read slightly higher, 0.960 / 0.972, the same family-capping inflation seen in the other two arms):
 
-| Model (same 60 families) | Held-out-family AUROC (mean / median) |
+| Model (same 300 families) | Held-out-family AUROC (mean / median) |
 |---|---|
-| ESM-2 layer 22 (sequence) | 0.993 / 0.998 |
-| **ProstT5 centered (structure)** | **0.960 / 0.972** |
-| Genos-m layer 9 (genome, 300-fam ref) | 0.739 / 0.795 |
+| ESM-2 layer 22 (sequence) | 0.988 / 0.996 |
+| **ProstT5 centered (structure)** | **0.944 / 0.960** |
+| Genos-m layer 9 (genome) | 0.739 / 0.795 |
 
 Structure-aware embedding is a strong Pfam-family separator, just below the pure sequence LM and well above the genomic FM — sensible, since Pfam families are homology-defined so a sequence model is naturally strong; structure is complementary, not superior, for family separation.
 
 ![Layer 2 ProstT5 vs sequence and genomic arms](results/figures/layer2_prostt5_summary.png)
 
-> **Honest scope:** scoped to 60 families because a 1.5B T5 encoder on MPS is slow (the blueprint's Layer-2 compute wall); the full 300-family run is a cloud afternoon. Details: [`docs/problems_and_decisions.md` § P4-D6](docs/problems_and_decisions.md).
+> **Honest scope:** reported at the matched 300-family scale, not the full 903-family panel that the ESM-2 headline uses. ProstT5 was also embedded for all 34,138 dark queries to serve as Layer 4's 5th axis. Details: [`docs/problems_and_decisions.md` § P4-D6, P4-D10](docs/problems_and_decisions.md).
 
 ---
 
 ## Honest limitations
 
 - The T1 "characterised" signal is a Pfam-37 net-new-family proxy, not full InterProScan against InterPro-latest — narrower than the original design spec, so the true positive count is understated, not overstated.
-- Genos-m now has both a full 903-family eval and a matched 300-family comparison against ESM-2 (both cloud A10G runs); ProstT5 (Layer 2) still only ran at 60 families — matched against ESM-2 within-eval, but not at the full scale of the ESM-2 headline. That full-scale ProstT5 run is recoverable on a rented GPU.
+- Genos-m has both a full 903-family eval and a matched 300-family comparison against ESM-2 (both cloud A10G runs); ProstT5 (Layer 2) is reported at the matched 300-family scale, not the full 903-family scale of the ESM-2 headline.
+- Genos-m's leakage exposure is only partially controllable: the leakage-tightened re-test (P4-D11) barely moved its enrichment, and no Pfam release beyond 37.0 exists here to test a genuinely clean post-cutoff split, so leakage remains an unconfirmed hypothesis for that axis.
 - The retrospective positive set is selection-biased toward near-known genes (characterisation is homology-driven), so Precision@K measures prioritisation value, not "novelty equals characterisability" — stated explicitly, not smoothed over.
-- Layer 3 (immune) underperforms Layer 1 as a standalone detector at every detector count tested up to 20,000; it's reported as a corroborating signal, not a competing one.
+- Layer 3 (immune) underperforms Layer 1 as a standalone detector at every detector count tested up to 50,000 (0.89 at its plateau vs 0.962); it's reported as a corroborating signal, not a competing one, and its frozen 5,000-detector default was deliberately kept.
 - The full-scale dark-query flagging result uses a stratified 14,138-of-34,138 sample of the dark-query population (all positives, 33% of dark_negatives) — a compute-time scope decision, not a methods one.
 - No CI pipeline and minimal automated tests (two smoke/device tests in `tests/`) — correctness is currently established by manual runs logged in `docs/experiment_log.md`, not an automated suite.
-- Layer 5's coding-vs-noise controls are shuffled and Markov-1 nulls, not true intergenic sequence — the stronger intergenic control needs full genome assemblies that weren't fetched (P1-D4).
+- Layer 5's true-intergenic control covers 44 of the 502 panel genomes (a bounded-cost sample), not the full panel; the 0.94 figure against shuffled/Markov-1 nulls is the easier of the two numbers.
 - No wet-lab or independent biological validation of any flagged sequence — every result here is a computational prioritisation signal, not a functional claim.
 - Developed and run on two personal machines (an M1 Pro laptop and an RTX 4060 laptop, 8GB VRAM), not a reproducible cloud environment — hardware-specific workarounds (fp32-only on MPS, small batch sizes) are documented but not eliminated.
 
@@ -261,7 +271,8 @@ Obscuron/
 ├── tests/                    # pytest: device detection + embedding smoke tests
 ├── docs/                     # design docs, decision log, experiment log, reproducibility notes
 ├── results/                  # committed derived artifacts: CSVs, JSON summaries, figures
-├── paper_draft/               # manuscript draft (gitignored — work in progress)
+├── benchmark_release/         # standalone benchmark package: README, checksummed manifest, genome panel, protein labels
+├── paper_draft/               # manuscript drafts (gitignored — work in progress)
 ├── web/                       # project landing page (index.html), deployed to S3 — see Live project page above
 ├── data/                      # gitignored — snapshots, sequences, embeddings (built locally)
 ├── figures/                   # gitignored — scratch evaluation output
@@ -317,6 +328,19 @@ uv run python scripts/reembed_reference_immune.py --layers 33,22 --fp32
 uv run python scripts/reembed_dark_queries.py --layers 33,22 --fp32
 uv run python scripts/run_immune.py
 uv run python scripts/immune_sweep.py
+uv run python scripts/immune_detector_saturation.py
+```
+
+```bash
+# Layers 2, 4, 5 and the Phase 4 follow-ups
+uv run python scripts/run_layer2_prostt5.py            # Layer 2: ProstT5 structure-aware arm
+uv run python scripts/compute_composition_novelty.py   # Layer 4 composition axis
+uv run python scripts/run_convergence.py               # Layer 4: multi-axis convergence
+uv run python scripts/run_statistical.py               # Layer 5: coding-structure statistics
+uv run python scripts/extract_intergenic_controls.py   # Layer 5: true-intergenic control
+uv run python scripts/label_panel_proteins_36_37.py    # leakage-tightened 36->37 boundary (P4-D11)
+uv run python scripts/genosm_leakage_relift.py         # Genos-m lift under that boundary
+uv run python scripts/package_benchmark_release.py     # standalone benchmark release
 ```
 
 ---
@@ -331,7 +355,7 @@ The pipeline itself doesn't run live infrastructure, so its operational risk is 
 >   --lifecycle-configuration '{"Rules":[{"Expiration":{"Days":30},"Status":"Enabled"}]}'
 > ```
 
-The Genos-m comparison used a rented cloud GPU (AWS A10G): the 300-family matched run, then the full 903-family eval plus Genos-m as a 4th convergence axis on 2026-09-14 (~75 min, ~$1.25). The one remaining paid-compute item is ProstT5 (Layer 2) at full scale, roughly a ~$2 rented-GPU afternoon.
+The Genos-m comparison used a rented cloud GPU (AWS A10G): the 300-family matched run, then the full 903-family eval plus Genos-m as a 4th convergence axis on 2026-09-14 (~75 min, ~$1.25). ProstT5's full-scale run and the 36→37 boundary scan ran locally. No paid-compute item remains.
 
 ---
 
@@ -342,7 +366,7 @@ The Genos-m comparison used a rented cloud GPU (AWS A10G): the 300-family matche
 | 1 — Benchmark + go/no-go gate | 1–3 | ✅ Complete | ✅ Complete |
 | 2 — Layer 1 EVT scorer | 4–6 | ✅ Complete | ✅ Complete |
 | 3 — Layer 3 immune layer | 7–9 | ✅ Complete | ✅ Complete |
-| 4 — Extension + manuscript | 10–12 | ✅ Extension complete (Layers 2, 4, 5 built; robustness + full Genos-m comparison; lit-search re-run) · 🔄 manuscript | ✅ Figures, README, citations |
+| 4 — Extension + manuscript | 10–12 | ✅ Extension complete (Layers 2, 4, 5 built; robustness + full Genos-m comparison; lit-search re-run) · Layer 3 re-freeze declined (P3-D8) · 🔄 manuscript submission | ✅ Figures, README, citations, ProstT5 full scale, intergenic control, benchmark release, Genos-m leakage re-test, project page |
 
 ---
 
@@ -361,7 +385,10 @@ The Genos-m comparison used a rented cloud GPU (AWS A10G): the 300-family matche
 - [`docs/Track1_phase3_immune_design.md`](docs/Track1_phase3_immune_design.md) — Layer 3 immune design spec and cross-track hand-offs
 - [`docs/Track1_phase4_extension_design.md`](docs/Track1_phase4_extension_design.md) — Phase 4 extension: Layer 4 convergence (+ Layers 2 & 5) design and results
 - [`docs/Track2_Phase1_Execution.md`](docs/Track2_Phase1_Execution.md) — Track 2's Phase 1 execution notes
+- [`docs/Track2_Phase2_Execution.md`](docs/Track2_Phase2_Execution.md) — Track 2's Phase 2 execution notes
 - [`docs/Track2_Phase2_scoring_handoff.md`](docs/Track2_Phase2_scoring_handoff.md) — scorer implementation interface contract
+- [`docs/Track2_Phase3_Execution.md`](docs/Track2_Phase3_Execution.md) — Track 2's Phase 3 execution notes (immune sweeps, detector saturation)
+- [`docs/Track2_Phase4_Execution.md`](docs/Track2_Phase4_Execution.md) — Track 2's Phase 4 execution notes (Genos-m full eval, ProstT5, intergenic controls, benchmark release)
 - [`docs/experiment_log.md`](docs/experiment_log.md) — one dated entry per meaningful run
 - [`docs/reproducibility.md`](docs/reproducibility.md) — hardware findings and dataset provenance
 
