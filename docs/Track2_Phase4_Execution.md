@@ -75,4 +75,4 @@ The first crash (batch_size=8) looked like a batch-size problem and was treated 
 | `data/processed/gtdb_R207/intergenic_controls.csv`, `statistical_results_intergenic.json` | True-intergenic control results. |
 | `scripts/package_benchmark_release.py`, `benchmark_release/` | Standalone benchmark release package (P4-D9). |
 
-**Next:** all four items are folded into `paper_draft/manuscript_draft.tex` (Layer 4 section, Limitations, Future Work, Discussion, Conclusion — kept out of git per the project's manuscript-drafts policy). Only remaining project work is manuscript polish (user-led) and Track 1's separate, out-of-scope call on whether to re-freeze Layer 3's detector-count default (P3-D8).
+**Next:** all four items are folded into `paper_draft/manuscript_draft.tex` (Layer 4 section, Limitations, Future Work, Discussion, Conclusion — kept out of git per the project's manuscript-drafts policy). Only remaining project work is manuscript polish (user-led). Track 1 declined to re-freeze Layer 3's detector-count default (P3-D8), so the frozen 5,000-detector default stands.
