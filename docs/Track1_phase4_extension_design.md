@@ -165,5 +165,5 @@ five are now done:
 
 **Phase 4 = ALL FIVE BLUEPRINT LAYERS BUILT, including every optional/cloud-gated
 extension (P4-D7..D10).** ALL TECHNICAL WORK COMPLETE across the full blueprint; only
-the manuscript remains (user-led), plus Track 1's own open call on whether to re-freeze
-Layer 3's detector-count default (P3-D8), which is outside this project's scope to decide.
+the manuscript remains (user-led). Track 1 declined to re-freeze Layer 3's detector-count
+default (P3-D8), so the frozen 5,000-detector default stands.

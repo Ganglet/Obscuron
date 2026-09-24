@@ -52,4 +52,4 @@ It's a genuine, reproducible finding (confirmed at three α values) that disagre
 | `results/figures/immune_sweep_summary.png` | Sweep summary figure. |
 | `scripts/run_immune_pipeline_resilient.ps1` | Checkpointed, watchdog-restarted, Startup-folder auto-resume launcher. |
 
-**Next:** reported to Track 1 for interpretation against P3-D6's acceptance sanity (the detector-count headroom and the positive-vs-dark_negative flag-rate divergence from Layer 1); folded into the manuscript's Layer 3 section alongside P3-D6 (Phase 4). Track 1's decision on whether to re-freeze the production detector count at ~30,000 remains open — see P3-D8 and `docs/problems_and_decisions.md`.
+**Next:** reported to Track 1 for interpretation against P3-D6's acceptance sanity (the detector-count headroom and the positive-vs-dark_negative flag-rate divergence from Layer 1); folded into the manuscript's Layer 3 section alongside P3-D6 (Phase 4). Track 1 declined to re-freeze the production detector count at ~30,000, so the 5,000 default stands — see P3-D8 and `docs/problems_and_decisions.md`.
